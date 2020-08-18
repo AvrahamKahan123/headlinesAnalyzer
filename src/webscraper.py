@@ -26,6 +26,7 @@ def get_MSNBC_headlines() -> list:
         [headline.findChildren('a')[0].text for headline in headlinesParser.find_all('h3', class_=h3Marker)])
     h2Marker = "a-la-carte__headline"
     headlines.extend([headline.text for headline in headlinesParser.find_all('h2', class_=h2Marker)])
+    return headlines
 
 """
 * Return all headlines from ABC
@@ -39,4 +40,3 @@ def get_ABC_headlines() -> list:
     allHeadlines.extend([headline.findChildren('a')[0].string.strip() for headline in
                          headlinesParser.find_all('div', class_="caption-wrapper")])
     return allHeadlines
-

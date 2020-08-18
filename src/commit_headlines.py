@@ -1,6 +1,7 @@
 import psycopg2
+import webscraper
 
-def connect_to_database():
+def get_db_connection():
     try:
         # WOULD BE MAJOR SECURITY HOLE IF WAS CONNECTABLE TO FROM OUTSIDE SINCE PASSWORD IS WRITTEN HERE
         headlineConnection = psycopg2.connect(user = "adminheadlines",
@@ -13,28 +14,33 @@ def connect_to_database():
         print ("Error when attempting to connect to Headlines database", error)
 
 
-def closeDatabase(connection, cursor):
+def close_db(connection, cursor):
     cursor.close()
     connection.close()
 
 def addHeadlinesToDB(headlineConnection, cursor):
     additions = []
-    fox_Headlines = get_fox_headlines()
-    additions.extend(createAddQuery(fox_Headlines, "fox"))
-    msnbc_Headlines = get_MSNBC_headlines()
-    additions.extend(createAddQuery(msnbc_headlines, "msnbc"))
-    abc_Headlines = get_ABC_headlines()
-    additions.extend(createAddQuery(abc_Headlines, "abc"))
+    fox_Headlines = webscraper.get_fox_headlines()
+    additions.extend(createInsertStatements(fox_Headlines, "fox"))
+    msnbc_Headlines = webscraper.get_MSNBC_headlines()
+    print(msnbc_Headlines)
+    additions.extend(createInsertStatements(msnbc_Headlines, "msnbc"))
+    abc_Headlines = webscraper.get_ABC_headlines()
+    additions.extend(createInsertStatements(abc_Headlines, "abc"))
     for addQuery in additions:
         cursor.execute(addQuery)
     headlineConnection.commit()
 
-def createAddQuery(headlines: list, source, )  -> list:
+def createInsertStatements(headlines: list, source, )  -> list:
     ret = []
     for headline in headlines:
-        ret.append(f"INSERT INTO TABLE allHeadlines( newsOrg, title, articleDate, articleTime) values ({source}, CURRENT_TIME, CURRENT_DATE)")
+        headline = headline.replace("\'", "\'\'")
+        ret.append(f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{source}', '{headline}', CURRENT_DATE, CURRENT_TIME) ;")
     return ret
 
 
-
-
+def update_DB():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    addHeadlinesToDB(connection, cursor)
+    close_db(connection, cursor)
