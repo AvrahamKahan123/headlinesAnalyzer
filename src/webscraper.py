@@ -12,7 +12,9 @@ def get_fox_headlines() -> list:
     articleMarker = ['title', 'title-color-default']
     return [headline.findChildren('a')[0].string for headline in headlinesParser.find_all('h2') if headline['class'] == articleMarker]
 
-
+"""
+* Return all headlines from MSNBC
+"""
 def get_MSNBC_headlines() -> list:
     urlMSNBC = "https://www.msnbc.com"
     htmlMSNBC = requests.get(urlMSNBC).text
@@ -25,7 +27,9 @@ def get_MSNBC_headlines() -> list:
     h2Marker = "a-la-carte__headline"
     headlines.extend([headline.text for headline in headlinesParser.find_all('h2', class_=h2Marker)])
 
-
+"""
+* Return all headlines from ABC
+"""
 def get_ABC_headlines() -> list:
     urlABC = "https://abcnews.go.com"
     htmlABC = requests.get(urlABC).text
