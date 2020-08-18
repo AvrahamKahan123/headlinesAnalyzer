@@ -6,7 +6,6 @@ def addHeadlinesToDB(headlineConnection, cursor):
     fox_Headlines = webscraper.get_fox_headlines()
     additions.extend(createInsertStatements(fox_Headlines, "fox"))
     msnbc_Headlines = webscraper.get_MSNBC_headlines()
-    print(msnbc_Headlines)
     additions.extend(createInsertStatements(msnbc_Headlines, "msnbc"))
     abc_Headlines = webscraper.get_ABC_headlines()
     additions.extend(createInsertStatements(abc_Headlines, "abc"))
@@ -18,7 +17,7 @@ def createInsertStatements(headlines: list, source, )  -> list:
     ret = []
     for headline in headlines:
         headline = headline.replace("\'", "\'\'")
-        ret.append(f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{source}', '{headline}', CURRENT_DATE, CURRENT_TIME) ;")
+        ret.append(f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{source}', '{headline}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;")
     return ret
 
 
@@ -28,3 +27,4 @@ def update_DB():
         with connection.cursor() as cursor:
             addHeadlinesToDB(connection, cursor)
     connection.close()
+
