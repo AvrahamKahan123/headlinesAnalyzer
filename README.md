@@ -1,4 +1,3 @@
 # headlinesAnalyzer
-Just started, Almost no code has been written. 
-used to analyze the headlines from American newsites
-Not completed at all yet
+Just started, not functional yet
+Is going to parse headlines from American news sites and discover trends using ElasticSearch and Postgres SQL
