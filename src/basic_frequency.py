@@ -18,5 +18,8 @@ def get_frequencies(words: list) -> int:
     connection.close()
     return word_frequencies
 
+#def dated_word_frequency(word: str, )
+
+
 print(get_frequencies(["Trump", "Biden"]))
 

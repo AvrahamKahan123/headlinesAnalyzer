@@ -40,3 +40,5 @@ def get_ABC_headlines() -> list:
     allHeadlines.extend([headline.findChildren('a')[0].string.strip() for headline in
                          headlinesParser.find_all('div', class_="caption-wrapper")])
     return allHeadlines
+
+print(get_fox_headlines())
