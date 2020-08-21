@@ -1,30 +1,32 @@
-import webscraper, database_connector
+import database_connector
+from webscraper import *
+from typing import List
+from article_headline import ArticleHeadline
 
+def get_all_headlines() -> list ():
+    all_headlines = [ArticleHeadline(headline, 'FOX') for headline in get_FOX_headlines()]
+    all_headlines.extend([ArticleHeadline(headline, 'MSNBC') for headline in get_MSNBC_headlines()])
+    all_headlines.extend([ArticleHeadline(headline, 'ABC') for headline in get_ABC_headlines()])
+    return all_headlines
 
-def addHeadlinesToDB(headlineConnection, cursor):
-    additions = []
-    fox_Headlines = webscraper.get_fox_headlines()
-    additions.extend(createInsertStatements(fox_Headlines, "fox"))
-    msnbc_Headlines = webscraper.get_MSNBC_headlines()
-    additions.extend(createInsertStatements(msnbc_Headlines, "msnbc"))
-    abc_Headlines = webscraper.get_ABC_headlines()
-    additions.extend(createInsertStatements(abc_Headlines, "abc"))
-    for addQuery in additions:
-        cursor.execute(addQuery)
+def add_headlines_SQLdb(headlineConnection, cursor):
+    headlines = get_all_headlines()
+    insert_statements = [create_insert_statement(headline) for headline in headlines]
+    for add_query in insert_statements:
+        cursor.execute(add_query)
     headlineConnection.commit()
 
-def createInsertStatements(headlines: list, source, )  -> list:
-    ret = []
-    for headline in headlines:
-        headline = headline.replace("\'", "\'\'")
-        ret.append(f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{source}', '{headline}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;")
-    return ret
+def create_insert_statement(headline: ArticleHeadline)  -> list:
+    return f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{headline.source}', '{headline.title}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;"
 
 
 def update_DB():
     connection = database_connector.get_db_connection()
     with connection:
         with connection.cursor() as cursor:
-            addHeadlinesToDB(connection, cursor)
+            add_headlines_SQLdb(connection, cursor)
     connection.close()
+
+if __name__ == '__main__':
+    update_DB()
 

@@ -12,7 +12,7 @@ class ElasticArticle:
 
     def search_es(self, search_term: str):
         self.es_connection.search(index="aggregateheadlines", body={"query": {"match": {'title': {search_term}}}})
-        
+
 
 if __name__ == '__main__':
     pass
