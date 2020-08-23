@@ -1,10 +1,19 @@
 from bs4 import BeautifulSoup
 import requests
 
+"""
+* gets full name of person from just their last name using Bing. Not functional yet
+"""
+def get_full_name(last_name):
+    searchURL = f"https://www.bing.com/search?q={last_name}" # the HTML Bing returns is easier to parse than Google's
+    html = requests.get(searchURL).text
+    name_index = html.index("<h2 class=\"  b_entityTitle\">") + len("<h2 class=\"  b_entityTitle\">")
+    end_name = html.index("<" , "<h2 class=\"  b_entityTitle\">") + len("<h2 class=\"  b_entityTitle\">")
+    return html[name_index: end_name + 1]
 
-"""
-* Return all headlines from fox
-"""
+
+
+#Return all headlines from fox
 def get_FOX_headlines() -> list:
     urlFox = "https://www.foxnews.com"
     htmlFox = requests.get(urlFox).text
@@ -41,4 +50,4 @@ def get_ABC_headlines() -> list:
                          headlinesParser.find_all('div', class_="caption-wrapper")])
     return allHeadlines
 
-print(get_FOX_headlines())
+print(get_full_name("Trump"))
