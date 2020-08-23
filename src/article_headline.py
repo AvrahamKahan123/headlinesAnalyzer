@@ -13,12 +13,11 @@ class ArticleHeadline:
     def add_person(self, first_name, last_name):
         self.people.append(first_name + " " + last_name)
 
-    def get_name(self, last_name):
 
 
 
     def to_json(self):
-        data_dict = {"title": self.title, "source": self.source, "atime": self.article_time, "adate": self.article_date}
+        data_dict = {"title": self.title, "source": self.source, "atime": self.article_time, "adate": self.article_date, "apeople": self.people}
         return json.dumps(data_dict)
 
 
