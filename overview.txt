@@ -1,0 +1,46 @@
+Package commit_DB:  Responsible for adding news queries to ElasticSearch and Postgres
+  Modules
+  webscraper - scrapes web for headlines and to research given last names
+  basic_frequency - simple postgres queries to see how common a search term is in headlines
+  commit_headlines - adds headlines to postgres
+  database_connector - provides functionality to connect to postgres
+  elastic_searcher - wrapper class for elasticsearch7 client. Currently incomplete
+Package headlines: responsible for holding classes to represent articles and other central classes for the program
+  article_headline - hold basic headline class
+  advanced_headline - has more advanced functionality, such as parsing headlines. Currently incomplete
+Package setup_DB - holds python scripts to parse data files and add the data to appropiate database
+  add_congresspeople - adds congresspeople to famous_people table
+  setup_elasticsearch - creates elasticsearch articles index
+
+
+SQLscripts:
+  holds scripts to generate tables, as well as to manually add individual rows to the tables
+  SQL schema can be viewed there
+   public | allheadlines | table | postgres - for headlines
+ public | famouspeople | table | postgres 
+ public | firstnames   | table | postgres
+ public | lastnames    | table | postgres
+ public | places       | table | postgres
+ public | propernouns  | table | postgres
+ 
+ ElasticSearch 7
+ Structure of articles index
+ {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0 #only 1 machine so this is pointless for now
+        },
+
+        'mappings': {
+            'examplecase': {
+                'properties': {
+                    'title': {'index': 'analyzed', 'type': 'string'},
+                    'dateTime': {'index': 'analyzed', 'format': 'yyyy-MM-dd HH:mm:ss', 'type': 'date'},
+                    'people': {'index': 'analyzed', 'type': 'list'},
+                    'places': {'index': 'analyzed', 'type': 'string'},
+                    'otherProperNouns' :{'index': 'analyzed', 'type': 'string'}
+                }}}
+  
+ 
+  
+  
