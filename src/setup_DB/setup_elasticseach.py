@@ -17,10 +17,7 @@ def compose_index():
             'examplecase': {
                 'properties': {
                     'title': {'index': 'analyzed', 'type': 'string'},
-                    'dateTime': {'index': 'analyzed', 'format': 'yyyy-MM-dd HH:mm:ss', 'type': 'date'},
-                    'people': {'index': 'analyzed', 'type': 'list'},
-                    'places': {'index': 'analyzed', 'type': 'string'},
-                    'otherProperNouns' :{'index': 'analyzed', 'type': 'string'}
+                    'id': {'index': 'not_analyzed', 'type': 'int'},
                 }}}
     }
     return request_body

@@ -1,14 +1,16 @@
 from commit_DB import database_connector
 from commit_DB.webscraper import *
+from typing import List
 from headlines.article_headline import ArticleHeadline
 
-def get_all_headlines() -> list ():
+def get_all_headlines() -> List[str]:
     all_headlines = [ArticleHeadline(headline, 'FOX') for headline in get_FOX_headlines()]
     all_headlines.extend([ArticleHeadline(headline, 'MSNBC') for headline in get_MSNBC_headlines()])
     all_headlines.extend([ArticleHeadline(headline, 'ABC') for headline in get_ABC_headlines()])
     return all_headlines
 
-def add_headlines_SQLdb(headlineConnection, cursor):
+def add_headlines_SQLdb(headlineConnection):
+    cursor = headlineConnection.cursor()
     headlines = get_all_headlines()
     insert_statements = [create_insert_statement(headline) for headline in headlines]
     for add_query in insert_statements:
@@ -23,7 +25,7 @@ def update_DB():
     connection = database_connector.get_db_connection()
     with connection:
         with connection.cursor() as cursor:
-            add_headlines_SQLdb(connection, cursor)
+            add_headlines_SQLdb(connection)
     connection.close()
 
 if __name__ == '__main__':

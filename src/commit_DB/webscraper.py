@@ -15,7 +15,7 @@ def get_full_name(last_name):
     possible_hits = name_parser.find_all('div', class_="BNeawe UPmit AP7Wnd")
     for hit in possible_hits:
         if hit.text.startswith("https://en.wikipedia.org › wiki ›"):
-            return hit.text.split("›")[-1]
+            return hit.text.split("›")[-1].replace("_", " ")
     raise RuntimeError("No name was found")
 
 
