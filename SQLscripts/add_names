@@ -1,0 +1,2 @@
+insert into lastNames select lastname from famouspeople; -- may create duplicate entries, which is fine since lastNames is to be treated as a set
+insert into firstNames select firstname from famouspeople;

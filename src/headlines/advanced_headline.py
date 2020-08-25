@@ -44,13 +44,19 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
                         self.add_person(full_name[0], full_name[1])
                     continue
                 else:
+                    if (self.is_place(candidate.join(' '))):
+                        self.add_place(candidate.join(' '))
+                    
+
 
             except NameNotFound or WordAdded:
                 continue
 
     def is_last_name(self, name):
-
-
+        cursor = self.connection.cursor()
+        query = f"Select count(*) from lastNames where name = '{name}'"
+        cursor.execute()
+        return cursor.fetchone()['count'] > 0
 
     def parse_person(self, candidate: List[str], description: str) -> None:
         if len(candidate) == 1:
