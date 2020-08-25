@@ -43,18 +43,26 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
                 if candidate[0][-1] == ".": # is title, ex. Prof., Dr., etc
                     candidate = self.parse_titled(candidate)
                 if len(candidate) == 1:
-                    if(self.is_place(candidate)):
-                        self.add_place(candidate)
-                    elif (self.is_last_name(candidate)):
-                        full_name = self.resolve_last_name(candidate)
-                        self.add_person(full_name[0], full_name[1])
+                    self.parse_single_word(candidate)
                     continue
                 else:
-                    if (self.is_place(candidate.join(' '))):
-                        self.add_place(candidate.join(' '))
+                    self.parse_long_phrase(candidate)
 
             except NameNotFound or WordAdded:
                 continue
+
+    def parse_long_phrase(self, candidate):
+        if (self.is_place(candidate.join(' '))):
+            self.add_place(candidate.join(' '))
+
+    def parse_single_word(self, candidate):
+        if (self.is_place(candidate)):
+            self.add_place(candidate)
+        elif (self.is_last_name(candidate)):
+            full_name = self.resolve_last_name(candidate)
+            self.add_person(full_name[0], full_name[1])
+        elif
+
 
     def combine_names(self, possible_names) -> List[str]:
         """ Combines consecutive capitalized words into names and proper nouns"""
