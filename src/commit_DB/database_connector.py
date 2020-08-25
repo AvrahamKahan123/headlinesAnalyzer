@@ -1,6 +1,8 @@
 import psycopg2
 
+
 def get_db_connection():
+    """ :return a connection to PostgresSQL headlines database"""
     try:
         # can reveal password since is only on local network
         headlineConnection = psycopg2.connect(user = "adminheadlines",

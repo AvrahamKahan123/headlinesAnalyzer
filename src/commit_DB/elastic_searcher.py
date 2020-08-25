@@ -5,6 +5,7 @@ from headlines.article_headline import ArticleHeadline
 
 # unready and incompelete
 class ElasticSearcher:
+    """ Wrapper class for elasticsearch7 client"""
     def __init__(self):
         self.es_connection = Elasticsearch([{'host': 'localhost', 'port': 9200}])
 

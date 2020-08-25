@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class ArticleHeadline:
-    def __init__(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now()),
+    def __init__(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now(), id = -1),
                  people = [], places = [], proper_nouns = []):
         self.title = title.replace("\'", "\'\'")
         self.source = source
@@ -12,6 +12,7 @@ class ArticleHeadline:
         self.people = people
         self.places = places
         self.proper_nouns = proper_nouns
+        self.id = id
 
     def add_person(self, first_name, last_name):
         self.people.append(first_name + " " + last_name)

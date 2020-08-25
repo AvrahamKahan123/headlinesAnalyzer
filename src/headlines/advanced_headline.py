@@ -7,13 +7,17 @@ from commit_DB import webscraper
 from commit_DB import add_famous
 
 
-class WordAdded(Exception): # to break flow of parsing of words when word has been resolved
+class WordAdded(Exception):
+    """to break flow of parsing of words when word has been resolved"""
     pass
 
-class NameNotFound(Exception): # if name cannot be located
+class NameNotFound(Exception):
+    """to break flow of parsing of words when word cannot be located"""
     pass
+
 
 class Name():
+    """ Wrapper to hold name of a person"""
     def __init__(self, first_name = "", last_name = ""):
         self.first_name = first_name
         self.last_name = last_name
@@ -24,12 +28,14 @@ class Name():
 
 
 class AdvancedHeadline(article_headline.ArticleHeadline):
+    """ Provides functionality to discover names, places, and other proper nouns mentioned in headlines"""
 
     def __init___(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now())):
         super().__init__(title, source)
         self.connection = database_connector.get_db_connection()
 
     def extract_proper_nouns(self) -> None:
+        """ Extacts names, places, etc. and stores them to the places variable """
         words = self.title.split(" ")
         possible_nouns = self.combine_names([word for word in words])
         for candidate in possible_nouns:
@@ -46,81 +52,12 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
                 else:
                     if (self.is_place(candidate.join(' '))):
                         self.add_place(candidate.join(' '))
-                    
-
 
             except NameNotFound or WordAdded:
                 continue
 
-    def is_last_name(self, name):
-        cursor = self.connection.cursor()
-        query = f"Select count(*) from lastNames where name = '{name}'"
-        cursor.execute()
-        return cursor.fetchone()['count'] > 0
-
-    def parse_person(self, candidate: List[str], description: str) -> None:
-        if len(candidate) == 1:
-            name = self.resolve_last_name(candidate[0], description)
-            self.add_person(name)
-        elif len(candidate) == 2:
-            self.add_person(candidate[1], candidate[0])
-        else:
-            self.add_person(candidate[1:].join(' '), candidate[0])
-
-
-    def resolve_last_name(self, name, keyword = ""):
-        try:
-            full_name: Name = self.check_db_lastname(name, keyword)
-            return full_name
-        except KeyError: # person was not in DB
-            pass
-        try:
-            full_name = self.scrape_name(name)
-            return full_name
-        except RuntimeError:
-            raise NameNotFound
-
-
-
-    def scrape_name(self, name):
-        full_name = webscraper.get_full_name(name)
-        name_split = full_name.split(' ')
-        ret = Name(first_name=name_split[0], last_name=name_split[1:].join(' '))
-        add_famous.add_famous(ret, 2, "", self.connection)
-        return ret
-
-    def check_db_lastname(self, name, keyword) -> Name:
-        cursor = self.connection.cursor()
-        if keyword == "":
-            query = f"SELECT * FROM famousPeople where lastName = {name} and level = 1"
-        else:
-            query = f"SELECT * FROM famousPeople where lastName = {name} and (level = 1 or Description like '%{keyword}%'"
-        fetched = cursor.execute(query)
-        return Name(fetched['first_name'], fetched['last_name'])
-
-
-
-    def is_place(self, candidate) -> bool:
-        cursor = self.connection.cursor()
-        place_query = f"Select count(*) from places where cname = '{candidate}'"
-        cursor.execute(place_query)
-        number = cursor.fetchone()
-        return number['count'] > 0
-
-
-    def parse_titled(self, candidate) -> List[str]:
-        if candidate[0] == "Sen." or candidate[0] == "Rep.":
-            self.parse_person(candidate[1:], "congress")
-            raise WordAdded
-        elif candidate[0] == "Pres.":
-            self.add_person("Trump", "Donald")
-            raise WordAdded
-        else:
-            return candidate[1:]
-
-
-
     def combine_names(self, possible_names) -> List[str]:
+        """ Combines consecutive capitalized words into names and proper nouns"""
         filtered_names = []
         current_name = []
         for name in possible_names:
@@ -138,4 +75,72 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
             else:
                 current_name.append(name)
         return filtered_names
+
+    def is_last_name(self, name) -> bool:
+        """ :return if given name is a last name"""
+        cursor = self.connection.cursor()
+        query = f"Select count(*) from lastNames where name = '{name}'"
+        cursor.execute()
+        return cursor.fetchone()['count'] > 0
+
+    def parse_person(self, candidate: List[str], description: str) -> None:
+        """ Parses given name to try to identify the person"""
+        if len(candidate) == 1:
+            name = self.resolve_last_name(candidate[0], description)
+            self.add_person(name)
+        elif len(candidate) == 2:
+            self.add_person(candidate[1], candidate[0])
+        else:
+            self.add_person(candidate[1:].join(' '), candidate[0])
+
+    def resolve_last_name(self, name, keyword = ""):
+        """ Given a last name, tries to find the full name"""
+        try:
+            full_name: Name = self.check_db_lastname(name, keyword)
+            return full_name
+        except KeyError: # person was not in DB
+            pass
+        try:
+            full_name = self.scrape_name(name)
+            return full_name
+        except RuntimeError:
+            raise NameNotFound
+
+    def scrape_name(self, name):
+        """ Scrapes a given last name off the web to find the first name"""
+        full_name = webscraper.get_full_name(name)
+        name_split = full_name.split(' ')
+        ret = Name(first_name=name_split[0], last_name=name_split[1:].join(' '))
+        add_famous.add_famous(ret, 2, "", self.connection)
+        return ret
+
+    def check_db_lastname(self, name, keyword) -> Name:
+        """ :return Name object with given name from DB"""
+        cursor = self.connection.cursor()
+        if keyword == "":
+            query = f"SELECT * FROM famousPeople where lastName = {name} and level = 1"
+        else:
+            query = f"SELECT * FROM famousPeople where lastName = {name} and (level = 1 or Description like '%{keyword}%'"
+        fetched = cursor.execute(query)
+        return Name(fetched['first_name'], fetched['last_name'])
+
+    def is_place(self, candidate) -> bool:
+        cursor = self.connection.cursor()
+        place_query = f"Select count(*) from places where cname = '{candidate}'"
+        cursor.execute(place_query)
+        number = cursor.fetchone()
+        return number['count'] > 0
+
+    def parse_titled(self, candidate) -> List[str]:
+        """ Parses a person who has a title, ex. Dr."""
+        if candidate[0] == "Sen." or candidate[0] == "Rep.":
+            self.parse_person(candidate[1:], "congress")
+            raise WordAdded
+        elif candidate[0] == "Pres.":
+            self.add_person("Trump", "Donald")
+            raise WordAdded
+        else:
+            return candidate[1:]
+
+
 
