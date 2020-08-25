@@ -1,6 +1,7 @@
 # headlinesAnalyzer
 In development. News and Twitter analyzer using ElasticSearch, the scikit-learn Machine Learning library, and PostgreSQL. 
 # explanation
+See overview.txt for explanation of program structure module by module
 This program attempts to understand the interaction between the news, news sites and social media. It uses BeautifulSoup to parse some news sites then saves the article headlines to PostgresSQL for persistent (write-once) data storage, and ElasticSearch as a search engine that can be reindexed as needed. After gathering the 
 headlines, they are clustered using the powerful Natural Language Proccessing modules in scikit-learn to discover overlapping articles. This can be used to see (for example) the kinds of news that recieve a lot of attention, and which kinds recieve less attention. The program also parses the headlines to discover trending news people, places, etc. It does this by relying on PostgreSQL databases containing famous people and places as a source of data to analyze headlines as well as a webscraper when novel data appears that is not in the database.
 headlinesAnalyzer also uses the Twitter API to recieve fresh tweets and then computes which news bits (which can also be thought of as headline clusters) are recieving attention using elasticsearch.
