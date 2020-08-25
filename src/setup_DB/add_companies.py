@@ -12,4 +12,4 @@ if __name__ == '__main__':
 
             else:
                 cursor.execute(f"INSERT INTO Organizations(orgName) Values('{line.strip()}')")
-        connection.commit() 
+        connection.commit()

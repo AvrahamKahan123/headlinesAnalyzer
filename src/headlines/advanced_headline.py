@@ -1,4 +1,4 @@
-import re
+import re, spacy
 from typing import List
 from datetime import datetime
 from headlines import article_headline
@@ -37,7 +37,7 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
         words = self.title.split(" ")
-        possible_nouns = self.combine_names([word for word in words])
+        possible_nouns = self.get_all_proper()
         for candidate in possible_nouns:
             try:
                 if candidate[0][-1] == ".": # is title, ex. Prof., Dr., etc
@@ -50,6 +50,17 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
 
             except NameNotFound or WordAdded:
                 continue
+
+    def get_all_proper(self):
+        nlp = spacy.load("en_core_web_sm")
+        title_doc = nlp(self.title)
+        all_nouns = []
+        for token in title_doc:
+            if token.pos_ == "PROPN":
+                all_nouns.append(token.text_.split(' '))
+        return all_nouns
+
+
 
     def parse_long_phrase(self, candidate):
         if (self.is_place(candidate.join(' '))):
