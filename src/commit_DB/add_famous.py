@@ -1,7 +1,10 @@
 from headlines.advanced_headline import Name
-import commit_DB.database_connector
 
-def add_famous(n: Name, connection):
 
+def add_famous(n: Name, level: int, description: str, connection):
+    cursor = connection.cursor()
+    insert_query = f"insert into famousPeople(level, lastName, firstName, Description) values({level}, {n.last_name}, {n.first_name}, '{description}'"
+    cursor.execute(insert_query)
+    connection.commit()
 
 

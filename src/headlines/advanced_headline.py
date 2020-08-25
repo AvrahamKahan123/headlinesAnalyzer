@@ -1,11 +1,16 @@
 import re
 from typing import List
+from datetime import datetime
 from headlines import article_headline
 from commit_DB import database_connector
 from commit_DB import webscraper
+from commit_DB import add_famous
 
 
 class WordAdded(Exception): # to break flow of parsing of words when word has been resolved
+    pass
+
+class NameNotFound(Exception): # if name cannot be located
     pass
 
 class Name():
@@ -20,31 +25,36 @@ class Name():
 
 class AdvancedHeadline(article_headline.ArticleHeadline):
 
+    def __init___(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now())):
+        super().__init__(title, source)
+        self.connection = database_connector.get_db_connection()
 
     def extract_proper_nouns(self) -> None:
-        connection = database_connector.get_db_connection()
-        cursor = connection.cursor()
         words = self.title.split(" ")
         possible_nouns = self.combine_names([word for word in words])
         for candidate in possible_nouns:
             try:
                 if candidate[0][-1] == ".": # is title, ex. Prof., Dr., etc
-                    candidate = self.parse_titled(candidate, connection)
+                    candidate = self.parse_titled(candidate)
                 if len(candidate) == 1:
-                    if(is_place(candidate, connection)):
+                    if(self.is_place(candidate)):
                         self.add_place(candidate)
-                    elif (is_last_name(candidate)):
+                    elif (self.is_last_name(candidate)):
                         full_name = resolve_last_name(candidate)
                         self.add_person(full_name[0], full_name[1])
                     continue
 
                 else:
-            except:
+            except NameNotFound or WordAdded:
                 continue
 
-    def parse_person(self, candidate: List[str], connection, description: str) -> None:
+    def is_last_name(self, name):
+
+
+
+    def parse_person(self, candidate: List[str], description: str) -> None:
         if len(candidate) == 1:
-            name = resolve_last_name(candidate[0], description)
+            name = self.resolve_last_name(candidate[0], description)
             self.add_person(name)
         elif len(candidate) == 2:
             self.add_person(candidate[1], candidate[0])
@@ -52,23 +62,29 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
             self.add_person(candidate[1:].join(' '), candidate[0])
 
 
-    def resolve_last_name(self, name, connection, keyword = ""):
+    def resolve_last_name(self, name, keyword = ""):
         try:
-            full_name: Name = self.check_db_lastname(name, connection, keyword)
+            full_name: Name = self.check_db_lastname(name, keyword)
+            return full_name
         except KeyError: # person was not in DB
             pass
         try:
-            name = self.scrape_name(name, connection)
+            full_name = self.scrape_name(name)
+            return full_name
+        except RuntimeError:
+            raise NameNotFound
+
 
 
     def scrape_name(self, name):
         full_name = webscraper.get_full_name(name)
+        name_split = full_name.split(' ')
+        ret = Name(first_name=name_split[0], last_name=name_split[1:].join(' '))
+        add_famous.add_famous(ret, 2, "", self.connection)
+        return ret
 
-
-
-
-    def check_db_lastname(self, name, connection, keyword) -> Name:
-        cursor = connection.cursor()
+    def check_db_lastname(self, name, keyword) -> Name:
+        cursor = self.connection.cursor()
         if keyword == "":
             query = f"SELECT * FROM famousPeople where lastName = {name} and level = 1"
         else:
@@ -78,8 +94,8 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
 
 
 
-    def is_place(self, candidate, connection) -> bool:
-        cursor = connection.cursor()
+    def is_place(self, candidate) -> bool:
+        cursor = self.connection.cursor()
         place_query = f"Select count(*) from places where cname = '{candidate}'"
         cursor.execute(place_query)
         number = cursor.fetchone()
