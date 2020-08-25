@@ -1,8 +1,8 @@
 -- is psql database
-create TABLE allHeadlines (newsOrg varchar(8), title text unique, articleDate date, articleTime time, constraint primary key(newsOrg, title));
+create TABLE allHeadlines (id SERIAL primary key, newsOrg varchar(8), title text unique, articleDate date, articleTime time);
 -- id is unused column; may be used later
 create TABLE famouspeople(level int, lastname text, firstname text, description text, primary key(id, lastname, firstname));
-create table places(id int, cname varchar(33), primary key(cname));
+create table places(id SERIAL primary key, pname varchar(33));
 create table properNouns(name text, level int, acronym VARCHAR(15), primary key(name, level));
 create table lastnames(name text, ranking int);
 create table firstNames(name text, ranking int);

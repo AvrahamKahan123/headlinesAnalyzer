@@ -40,11 +40,11 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
                     if(self.is_place(candidate)):
                         self.add_place(candidate)
                     elif (self.is_last_name(candidate)):
-                        full_name = resolve_last_name(candidate)
+                        full_name = self.resolve_last_name(candidate)
                         self.add_person(full_name[0], full_name[1])
                     continue
-
                 else:
+
             except NameNotFound or WordAdded:
                 continue
 

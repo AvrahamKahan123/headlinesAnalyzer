@@ -29,6 +29,4 @@ def update_DB():
     connection.close()
 
 if __name__ == '__main__':
-    a = get_all_headlines()
-    for i in a:
-        print(i)
+    update_DB()
