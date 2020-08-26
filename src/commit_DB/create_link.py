@@ -1,7 +1,4 @@
-def execute_insert(insert_stmt: str, connection):
-    cursor = connection.cursor()
-    cursor.execute(insert_stmt)
-    connection.commit()
+from commit_DB.psql_util import execute_insert
 
 
 def link_headline_place(headline_id: int, place_id: int, connection):
