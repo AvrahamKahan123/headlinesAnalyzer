@@ -1,11 +1,17 @@
 import re, spacy
+from collections import namedtuple
 from typing import List
 from datetime import datetime
 from headlines import article_headline
+from headlines import search_psql
 from commit_DB import database_connector
 from commit_DB import webscraper
-from commit_DB import add_famous
+from commit_DB import create_link
 
+
+"""
+TRANSITIONING CODE FROM USING MORE EXPLICIT CHECKS TO RELYING MORE ON spaCy MODULE. IS NOT FUNCTIONAL OR EVEN LOGICAL YET
+"""
 
 class WordAdded(Exception):
     """to break flow of parsing of words when word has been resolved"""
@@ -14,6 +20,10 @@ class WordAdded(Exception):
 class NameNotFound(Exception):
     """to break flow of parsing of words when word cannot be located"""
     pass
+
+ProperNoun = namedtuple('ProperNoun', 'noun label') # basically a small container class
+Place = namedtuple('Place', 'id name')
+Person = namedtuple('Person', 'id name') # name is of type name
 
 
 class Name():
@@ -36,59 +46,73 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
 
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
-        words = self.title.split(" ")
-        possible_nouns = self.get_all_proper()
-        for candidate in possible_nouns:
+        proper_nouns: List[ProperNoun] = self.get_all_proper()
+        for candidate in proper_nouns:
             try:
-                if candidate[0][-1] == ".": # is title, ex. Prof., Dr., etc
-                    candidate = self.parse_titled(candidate)
-                if len(candidate) == 1:
+                if self.num_words(candidate.noun) == 1:
                     self.parse_single_word(candidate)
-                    continue
                 else:
                     self.parse_long_phrase(candidate)
-
             except NameNotFound or WordAdded:
                 continue
 
-    def get_all_proper(self):
+    def get_all_proper(self) -> List[ProperNoun]:
+        """ Get list of all proper nouns using spaCy"""
         nl_processor = spacy.load("en_core_web_sm")
         analyzed_title = nl_processor(self.title)
-        return [ent.text_ for ent in analyzed_title.ents]
+        return [ProperNoun(ent.text_, ent.label_) for ent in analyzed_title.ents]
+
+    def num_words(self, phrase) -> int:
+        return len(phrase.split(' '))
+
+    def parse_single_word(self, candidate: ProperNoun) -> None:
+        """ Parses a single word and if it finds a hit, notes it in the db, etc"""
+        found_place: Place = self.search_singleplace(candidate.noun) # will be none if is not place
+        if found_place:
+            self.note_place(found_place.id, found_place.name)
+            return
+        if self.search_singlename(candidate):
+            return
+        if self.search_singleorg(candidate):
+            return
+
+    def search_singleplace(self, candidate_place: str):
+        """ Checks single word Noun for match to place"""
+        place_query = f"Select * from places where pname = '{candidate_place}'"
+        search_result = search_psql.query_single(self.connection, place_query)
+        try: # checks if there are any results
+            return Place(search_result['id'], candidate_place)
+        except KeyError:
+            return None
+
+    def search_singlename(self, candidate_person: str):
+        person_query = f"Select * from famousPeople where last_name = '{candidate_name}'"
+        search_person = search_psql.query_single(self.connection, person_query)
+        try: # checks if there are any results
+            return Person(search_person['id'], Name(search_person['first_name'], search_person['last_name']))
+        except KeyError:
+            scraped_name = self.scrape_name(candidate_person)
+            if scraped_name:
+                return Person()
+
+    def scrape_name(self, name) -> Name:
+        """ Scrapes a given last name off the web to find the first name"""
+        full_name = webscraper.get_full_name(name)
+        if full_name:
+            name_corrected = full_name.replace('_', ' ')
+            split_name = name_corrected.split(' ')
+            return Name(split_name[0], split_name[1:].join(''))
+        else:
+            return None
 
 
-    def parse_long_phrase(self, candidate):
-        if (self.is_place(candidate.join(' '))):
-            self.add_place(candidate.join(' '))
+    def note_place(self, place_id: int, place_name: str):
+        create_link.link_headline_place(self.id, place_id)
+        self.places.append(place_name)
 
-    def parse_single_word(self, candidate):
+    def parse_long_phrase(self, candidate)-> None:
         if (self.is_place(candidate)):
-            self.add_place(candidate)
-        elif (self.is_last_name(candidate)):
-            full_name = self.resolve_last_name(candidate)
-            self.add_person(full_name[0], full_name[1])
-        elif
-
-
-    def combine_names(self, possible_names) -> List[str]:
-        """ Combines consecutive capitalized words into names and proper nouns"""
-        filtered_names = []
-        current_name = []
-        for name in possible_names:
-            if name[0].islower():
-                if (len(current_name) > 0):
-                    filtered_names.append([current_name])
-            elif bool(re.match(name[-1], ",|'|:|;")) or (name[-2] == "'" and name[-1] == "s"):
-                current_name.append(name)
-                filtered_names.append(current_name)
-                current_name = ""
-            elif name[0].islower():
-                if (len(current_name) > 0):
-                    filtered_names.append(current_name)
-                current_name = ""
-            else:
-                current_name.append(name)
-        return filtered_names
+            self.add_place(candidate.join(' '))
 
     def is_last_name(self, name) -> bool:
         """ :return if given name is a last name"""
@@ -120,13 +144,7 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
         except RuntimeError:
             raise NameNotFound
 
-    def scrape_name(self, name):
-        """ Scrapes a given last name off the web to find the first name"""
-        full_name = webscraper.get_full_name(name)
-        name_split = full_name.split(' ')
-        ret = Name(first_name=name_split[0], last_name=name_split[1:].join(' '))
-        add_famous.add_famous(ret, 2, "", self.connection)
-        return ret
+
 
     def check_db_lastname(self, name, keyword) -> Name:
         """ :return Name object with given name from DB"""
