@@ -52,14 +52,9 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
                 continue
 
     def get_all_proper(self):
-        nlp = spacy.load("en_core_web_sm")
-        title_doc = nlp(self.title)
-        all_nouns = []
-        for token in title_doc:
-            if token.pos_ == "PROPN":
-                all_nouns.append(token.text_.split(' '))
-        return all_nouns
-
+        nl_processor = spacy.load("en_core_web_sm")
+        analyzed_title = nl_processor(self.title)
+        return [ent.text_ for ent in analyzed_title.ents]
 
 
     def parse_long_phrase(self, candidate):

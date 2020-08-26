@@ -1,5 +1,6 @@
 from commit_DB import database_connector
 
+
 def add_first_names(cursor, connection):
     i=0
     with open("../../data/first_names.txt") as first_names:

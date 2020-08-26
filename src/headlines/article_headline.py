@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class ArticleHeadline:
-    def __init__(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now(), id = -1),
+    def __init__(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now()), id = -1,
                  people = [], places = [], proper_nouns = []):
         self.title = title.replace("\'", "\'\'")
         self.source = source

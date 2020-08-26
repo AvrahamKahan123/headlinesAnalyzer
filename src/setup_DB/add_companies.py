@@ -8,8 +8,8 @@ if __name__ == '__main__':
             line = line.replace("\'", "\'\'")
             first_word = line.split(' ')[0]
             if len(first_word) > 2 and first_word.upper() == first_word:
-                cursor.execute(f"INSERT INTO Organizations(orgName, abbreviation) Values('{line.strip()}', '{first_word}')")
+                cursor.execute(f"INSERT INTO Organizations(orgName, abbreviation) Values('{line.strip()}', '{first_word}') on conflict do nothing")
 
             else:
-                cursor.execute(f"INSERT INTO Organizations(orgName) Values('{line.strip()}')")
+                cursor.execute(f"INSERT INTO Organizations(orgName) Values('{line.strip()}') on conflict do nothing")
         connection.commit()
