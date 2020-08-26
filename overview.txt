@@ -16,15 +16,27 @@ Package setup_DB - holds python scripts to parse data files and add the data to 
 SQLscripts:
   holds scripts to generate tables, as well as to manually add individual rows to the tables
   SQL schema can be viewed there
-   public | allheadlines | table | postgres - for headlines
- public | famouspeople | table | postgres 
- public | firstnames   | table | postgres
- public | lastnames    | table | postgres
- public | places       | table | postgres
- public | propernouns  | table | postgres
+ Schema |     Name      | Type  |  Owner   
+--------+---------------+-------+----------
+ public | allheadlines  | table | postgres   
+ public | famouspeople  | table | postgres
+ public | firstnames    | table | postgres
+ public | lastnames     | table | postgres
+ public | organizations | table | postgres
+ public | places        | table | postgres
+ public | propernouns   | table | postgres
+ create TABLE allHeadlines (id SERIAL primary key, newsOrg varchar(8), title text unique, articleDate date, articleTime time);
+-- id is unused column; may be used later
+create TABLE famouspeople(level int, lastname text, firstname text, description text, primary key(id, lastname, firstname));
+create table places(id SERIAL primary key, pname text, realName text); -- real name is in case of synonyms
+create table properNouns(name text, level int, acronym VARCHAR(15), primary key(name, level));
+create table lastnames(name text, ranking int);
+create table firstNames(name text, ranking int);
+create table organizations(id serial primary key, orgname text, abbreviation text);
+ 
  
  ElasticSearch 7
- Structure of articles index
+ structure of headlines index
  {
         "settings": {
             "number_of_shards": 1,
@@ -35,11 +47,24 @@ SQLscripts:
             'examplecase': {
                 'properties': {
                     'title': {'index': 'analyzed', 'type': 'string'},
-                    'dateTime': {'index': 'analyzed', 'format': 'yyyy-MM-dd HH:mm:ss', 'type': 'date'},
-                    'people': {'index': 'analyzed', 'type': 'list'},
-                    'places': {'index': 'analyzed', 'type': 'string'},
-                    'otherProperNouns' :{'index': 'analyzed', 'type': 'string'}
+                    'id': {'index': 'not_analyzed', 'type': 'int'},
                 }}}
+    }
+ Structure of clusters index
+ { {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0  # only 1 machine so this is pointless for now
+        },
+
+        'mappings': {
+            'examplecase': {
+                'properties': {
+                    'titles': {'index': 'analyzed', 'type': 'string'},
+                    'keywords': {'index': 'analyzed', 'type': 'string'},
+                    'ids': {'index': 'not_analyzed', 'type': 'int'},
+                }}}
+    }
   
  
   
