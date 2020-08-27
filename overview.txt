@@ -1,21 +1,27 @@
-Package commit_DB:  Responsible for adding news queries to ElasticSearch and Postgres
+Package commit_headlinesDB:  Responsible for adding news queries to ElasticSearch and Postgres
   Modules
   webscraper - scrapes web for headlines and to research given last names
-  basic_frequency - simple postgres queries to see how common a search term is in headlines
-  commit_headlines - adds headlines to postgres
+  basic_frequency - simple postgres queries to see how common a search term is in headlines. Used for testing purposes
+  commit_headlines - adds headlines to postgres by calling functions from webscraper module
+  webscraper - scrapes headlines using BeautifulSoup4
   database_connector - provides functionality to connect to postgres
-  elastic_searcher - wrapper class for elasticsearch7 client. Currently incomplete
-Package headlines: responsible for holding classes to represent articles and other central classes for the program
-  article_headline - hold basic headline class
-  advanced_headline - has more advanced functionality, such as parsing headlines using NLP for people and places
   
-Package setup_DB - holds python scripts to parse data files and add the data to appropiate database
-  add_congresspeople - adds congresspeople to famous_people table
-  setup_elasticsearch - creates elasticsearch articles index
+Package headlines: responsible for holding classes to represent articles and other central classes for the program
+  article_headline - hold basic headline class attributes
+  advanced_headline - has more advanced functionality, such as parsing headlines using NLP for people, organizations, and places
+  clustering - incomplete
+
+Package twitter_streamer -
+  API_keys - Provides interface to API keys. Not tracked by git to keep API keys secure. 
+  search_tweets - uses the twitter_stream to get tweets based on keywords
+  twitter_stream - extends Tweepy.stream to change stream behavior when tweet is recieved
+  
+Package setup_DB - holds python scripts to parse data files and add the data to appropiate tables
+  numerous scripts to add from data files to postgres
 
 
 SQLscripts:
-  holds scripts to generate tables, as well as to manually add individual rows to the tables
+  holds scripts to generate tables, as well as to manually add/manipulate individual rows to the tables
   SQL schema can be viewed there
              List of relations
  Schema |      Name      | Type  |  Owner   
@@ -38,8 +44,6 @@ create table headlinePlaces(headlineId int , placeId int, foreign key(headlineId
 create table headlinepeople(headlineId int , personId int, foreign key(headlineId) references allHeadlines(id), foreign key(personId) references famouspeople(id));
 create table headlineOrgs(headlineId int , orgId int, foreign key(headlineId) references allHeadlines(id), foreign key(orgId) references organizations(id));
 
-
---create table properNouns(name text, level int, acronym VARCHAR(15), primary key(name, level));
 create table lastnames(name text unique, ranking int);
 create table firstNames(name text unique, ranking int);
 
@@ -49,7 +53,7 @@ create table firstNames(name text unique, ranking int);
  {
         "settings": {
             "number_of_shards": 1,
-            "number_of_replicas": 0 #only 1 machine so this is pointless for now
+            "number_of_replicas": 0 #only 1 machine, so more would be pointless for now
         },
 
         'mappings': {
@@ -63,7 +67,7 @@ create table firstNames(name text unique, ranking int);
  { {
         "settings": {
             "number_of_shards": 1,
-            "number_of_replicas": 0  # only 1 machine so this is pointless for now
+            "number_of_replicas": 0  # only 1 machine so more would be pointless for now
         },
 
         'mappings': {
