@@ -9,6 +9,12 @@ Package commit_headlinesDB:  Responsible for adding news queries to ElasticSearc
 Package headlines: responsible for holding classes to represent articles and other central classes for the program
   article_headline - hold basic headline class attributes
   advanced_headline - has more advanced functionality, such as parsing headlines using NLP for people, organizations, and places
+  clustering - incomplete
+
+Package twitter_streamer -
+  API_keys - Provides interface to API keys. Not tracked by git to keep API keys secure. 
+  search_tweets - uses the twitter_stream to get tweets based on keywords
+  twitter_stream - extends Tweepy.stream to change stream behavior when tweet is recieved
   
 Package setup_DB - holds python scripts to parse data files and add the data to appropiate tables
   numerous scripts to add from data files to postgres
