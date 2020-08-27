@@ -1,4 +1,4 @@
-from commit_DB import database_connector
+from commit_headlinesDB import database_connector
 
 
 def add_first_names(cursor, connection):

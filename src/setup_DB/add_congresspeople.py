@@ -1,5 +1,5 @@
 import csv
-from commit_DB import database_connector
+from commit_headlinesDB import database_connector
 
 #THIS FILE WILL ONLY BE RUN ONCE TO SET UP THE FAMOUS PERSON POSTGTGRES DB
 

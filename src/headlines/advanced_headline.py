@@ -3,11 +3,11 @@ from collections import namedtuple
 from typing import List
 from datetime import datetime
 from headlines import article_headline
-from commit_DB import database_connector
-from commit_DB import webscraper
-from commit_DB import create_link
-from commit_DB.psql_util import query_single_field
-from commit_DB.psql_util import query_full_row
+from commit_headlinesDB import database_connector
+from commit_headlinesDB import webscraper
+from commit_headlinesDB import create_link
+from commit_headlinesDB.psql_util import query_single_field
+from commit_headlinesDB.psql_util import query_full_row
 
 
 

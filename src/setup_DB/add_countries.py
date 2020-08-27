@@ -1,4 +1,4 @@
-from commit_DB import database_connector
+from commit_headlinesDB import database_connector
 
 if __name__ == '__main__':
     connection = database_connector.get_db_connection()

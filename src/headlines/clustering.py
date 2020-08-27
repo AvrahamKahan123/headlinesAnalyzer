@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from sklearn.cluster import MiniBatchKMeans
-from commit_DB import database_connector
+from commit_headlinesDB import database_connector
 from sklearn.feature_extraction.text import TfidfVectorizer
 from headlines import advanced_headline
 
