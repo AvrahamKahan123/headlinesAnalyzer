@@ -2,6 +2,7 @@ from typing import List
 from elasticsearch7 import Elasticsearch
 from headlines.extract_topics import Topic
 
+""" Wrapper for ElasticSearch client"""
 
 def get_es_client():
     return Elasticsearch({'host': 'localhost', 'port': 9200}, timeout=300)

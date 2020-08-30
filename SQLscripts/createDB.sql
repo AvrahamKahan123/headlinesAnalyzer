@@ -2,7 +2,7 @@
 create TABLE allHeadlines (id SERIAL primary key, newsOrg varchar(8), title text unique, articleDate date, articleTime time);
 create TABLE famouspeople(id serial primary key, level int, lastname text, firstname text, description text);
 create table places(id SERIAL primary key, pname text, realName text unique); -- real name is for case of synonyms (ex. America, USA, United States
-create table organizations(id serial primary key, orgname text unique, abbreviation text);
+create table organizations(id serial primary key, orgname text unique, shortname text);
 create table headlinePlaces(headlineId int , placeId int, foreign key(headlineId) references allHeadlines(id), foreign key(placeId) references places(id));
 create table headlinepeople(headlineId int , personId int, foreign key(headlineId) references allHeadlines(id), foreign key(personId) references famouspeople(id));
 create table headlineOrgs(headlineId int , orgId int, foreign key(headlineId) references allHeadlines(id), foreign key(orgId) references organizations(id));

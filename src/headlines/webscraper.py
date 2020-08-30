@@ -1,8 +1,10 @@
 from bs4 import BeautifulSoup
 from typing import List
 import requests
+from headlines.ArticleHeadline import ArticleHeadline
 # CODE MUST BE RUN FROM USA OR AMERICAN VPN SO PROPER HTML WILL BE OBTAINED BY REQUESTS
 
+""" Scraper for all web scraping in this project (getting headlines primarily, but also identifying full names for incomplete names"""
 
 def get_full_name(last_name):
     """
@@ -64,3 +66,11 @@ def has_class_marker(headline, marker) -> bool:
         return headline['class'] == marker
     except KeyError:
         return False
+
+
+def get_all_headlines() -> List[str]:
+    """ Returns list of all headlines currently being scraped """
+    all_headlines = [ArticleHeadline(headline, 'FOX') for headline in get_FOX_headlines()]
+    all_headlines.extend([ArticleHeadline(headline, 'MSNBC') for headline in get_MSNBC_headlines()])
+    all_headlines.extend([ArticleHeadline(headline, 'ABC') for headline in get_ABC_headlines()])
+    return all_headlines

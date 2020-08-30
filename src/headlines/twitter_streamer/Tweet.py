@@ -3,6 +3,7 @@ from textblob import TextBlob
 
 
 class Tweet:
+    """ Class to hold tweet objects"""
     def __init__(self, text: str, retweets: int, hashtags: List[str]):
         self.text = text
         self.retweets = retweets

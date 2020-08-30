@@ -1,5 +1,6 @@
 import elasticsearch7
 
+""" CREATE ELASTICSEARCH INDICES. RUN ONCE"""
 
 def get_instance():
     es_instance = elasticsearch7.Elasticsearch({'host': 'localhost', 'port': 9200}, timeout=300)

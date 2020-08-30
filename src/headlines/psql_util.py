@@ -1,8 +1,9 @@
 import psycopg2
 from headlines.webscraper import *
-from headlines.article_headline import ArticleHeadline
-from headlines.advanced_headline import Name
+from headlines.ArticleHeadline import Name
+from headlines.webscraper import get_all_headlines
 
+""" PSQL Utility class"""
 
 def get_db_connection():
     """ :return a connection to PostgresSQL headlines database"""
@@ -44,7 +45,7 @@ def query_full_row(query: str, connection):
     return cursor.fetchone()
 
 
-def create_insert_statement(headline: ArticleHeadline)  -> str:
+def create_insert_article(headline: ArticleHeadline)  -> str:
     """ Returns insert statement for article """
     return f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{headline.source}', '{headline.title}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;"
 
@@ -66,22 +67,14 @@ def link_headline_org(headline_id: int, org_id: int, connection):
 def add_famous(n: Name, level: int, description: str, connection) -> int:
     """ Adds a name to the famousPeople PostgreSQL table"""
     insert_query = f"insert into famousPeople(level, lastName, firstName, Description) values({level}, {n.last_name}, {n.first_name}, '{description}'"
-    execute_insert(insert_query)
-
-
-def get_all_headlines() -> List[str]:
-    """ Returns list of all headlines currently being scraped """
-    all_headlines = [ArticleHeadline(headline, 'FOX') for headline in get_FOX_headlines()]
-    all_headlines.extend([ArticleHeadline(headline, 'MSNBC') for headline in get_MSNBC_headlines()])
-    all_headlines.extend([ArticleHeadline(headline, 'ABC') for headline in get_ABC_headlines()])
-    return all_headlines
+    execute_insert(insert_query, connection)
 
 
 def add_headlines_SQLdb(headline_connection):
     """ adds headline to PostgreSQL database """
     cursor = headline_connection.cursor()
     headlines = get_all_headlines()
-    insert_statements = [create_insert_statement(headline) for headline in headlines]
+    insert_statements = [headline.create_insert() for headline in headlines]
     for add_query in insert_statements:
         cursor.execute(add_query)
     headline_connection.commit()

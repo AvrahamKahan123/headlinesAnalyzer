@@ -1,6 +1,6 @@
 from headlines.psql_util import get_db_connection
 
-
+"""RUN ONCE"""
 def add_first_names(cursor, connection):
     i=0
     with open("../../data/first_names.txt") as first_names:

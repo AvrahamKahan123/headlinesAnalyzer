@@ -1,5 +1,6 @@
 from headlines.psql_util import get_db_connection
 
+""" RUN ONCE"""
 if __name__ == '__main__':
     connection = get_db_connection()
     cursor = connection.cursor()

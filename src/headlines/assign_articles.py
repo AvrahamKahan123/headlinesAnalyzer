@@ -1,10 +1,11 @@
 from typing import List
-from headlines.advanced_headline import AdvancedHeadline
+from headlines.ArticleHeadline import ArticleHeadline
 from headlines.es_util import get_es_client
 
 
 class ArticleAssigner:
-    def __init__(self, headlines: List[AdvancedHeadline], threshold: float):
+    """ Discovers Topic to which ArticleHeadline objects belong to using ElasticSearch"""
+    def __init__(self, headlines: List[ArticleHeadline], threshold: float):
         self.headlines = headlines
         self.threshold = threshold # threshold for ElasticSearch hit for a topic must be to be considered signifigant
         self.es_instance = get_es_client()
@@ -18,7 +19,7 @@ class ArticleAssigner:
                     continue
             head_line.topic_index = search_results[0]['ident'] # this line will be changed later so that topic asisignment is based on more than ES search score
 
-    def search_headline(self, head_line: AdvancedHeadline):
+    def search_headline(self, head_line: ArticleHeadline):
         search_results = self.es_instance.search(index='topicsIndex', doc_type='topic', body={
             'query': {
                 'match': {
@@ -28,7 +29,7 @@ class ArticleAssigner:
         })
         return search_results
 
-    def search_pnouns_headline(self, head_line: AdvancedHeadline):
+    def search_pnouns_headline(self, head_line: ArticleHeadline):
         search_results = self.es_instance.search(index='topicsIndex', doc_type='topic', body={
             'query': {
                 'match': {

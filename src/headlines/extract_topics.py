@@ -5,21 +5,22 @@ from sklearn.feature_extraction.text import CountVectorizer
 import unicodedata, spacy
 from sklearn.base import BaseEstimator, TransformerMixin
 from nltk.stem import WordNetLemmatizer
-from headlines.advanced_headline import AdvancedHeadline
+from headlines.ArticleHeadline import ArticleHeadline
 
 
 class Topic:
-    """ Is Class and not named tuple since may have more functionality added later"""
+    """ Represents topics extracted using NDA"""
     def __init__(self, id: int, keywords: List[str]):
         self.id = id
         self.keywords = keywords
         self.headlines = set()
 
-    def add_headline(self, headline: AdvancedHeadline):
+    def add_headline(self, headline: ArticleHeadline):
         self.headlines.add(headline)
 
 
 class TitleNormalizer(BaseEstimator, TransformerMixin):
+    """ Normalizes title by lemmatizing the title and removing punctuations and stopwords"""
     def __init__(self, language='english'):
         self.lemmatizer = WordNetLemmatizer()
         self.stop_words = set(spacy.spacy.lang.en.stop_words.STOP_WORDS) # set to allow faster search. spaCy used instead of NLTK stopwords since spaCy's are more completee

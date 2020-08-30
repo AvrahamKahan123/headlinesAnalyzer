@@ -1,51 +1,33 @@
-import spacy
+import spacy, json
 from collections import namedtuple
 from typing import List
 from datetime import datetime
 from nltk.tokenize import WhitespaceTokenizer
 from nltk.stem.snowball import SnowballStemmer
-from headlines import article_headline, webscraper
-from headlines.psql_util import query_single_field
-from headlines.psql_util import query_full_row
-from headlines.psql_util import get_db_connection
-from headlines.psql_util import link_headline_person
-from headlines.psql_util import link_headline_place
+from headlines import webscraper
+from headlines import psql_util
+
 
 """
 TRANSITIONING CODE FROM USING MORE EXPLICIT CHECKS TO RELYING MORE ON spaCy MODULE. IS NOT FUNCTIONAL OR EVEN LOGICAL YET
 
-PARSING of titles IS COMPLETELY NON FUNCTIONAL, AND ISNT EVEN VERY CLEAR RIGHT NOW.
+PARSING of titles IS NOT FUNCTIONAL YET
 """
 
-class WordAdded(Exception):
-    """to break flow of parsing of words when word has been resolved"""
-    pass
 
-class NameNotFound(Exception):
-    """to break flow of parsing of words when word cannot be located"""
-    pass
-
-ProperNoun = namedtuple('ProperNoun', 'noun label') # basically a small container class with fields noun and label
-Place = namedtuple('Place', 'id name')
-Person = namedtuple('Person', 'id name') # name is of type name
-Name = namedtuple('Name', 'first_name last_name')
-
-
-class AdvancedHeadline(article_headline.ArticleHeadline):
-    """ Provides functionality to discover names, places, and other proper nouns mentioned in headlines"""
-
-    def __init___(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now()), id = -1,
+class ArticleHeadline:
+    """ Represents headline parsed from web. Contains id of Article in postgres, as well as extracted peoples, places, and organizations"""
+    def __init__(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now()), id = -1,
                  people = [], places = [], proper_nouns = []):
-        super().__init__(title, source, article_date, article_time, id, people, places, proper_nouns)
-        self.connection = get_db_connection()
-        self.topic_index = -1 # will be used to save
-
-    def get_all_pnouns(self):
-        """ Returns list containing all proper nouns for this headline"""
-        return self.places + self.people + self.orgs + self.proper_nouns
-
-    def cleaned(self):
-        return self.tokenized().join(' ')
+        self.title = title.replace("\'", "\'\'")
+        self.source = source
+        self.article_date = article_date
+        self.article_time = article_time
+        self.people = people
+        self.places = places
+        self.proper_nouns = proper_nouns
+        self.id = id
+        self.topic_index = -1
 
     def tokenized(self) -> List[str]:
         """ Extracts stemmed and cleaned tokens of title. May be used as part of the parsing"""
@@ -71,26 +53,64 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
         stemmed_list = [snowball.stem(word) for word in tokens]
         return stemmed_list
 
+    def get_all_pnouns(self):
+        """ Returns list containing all proper nouns for this headline"""
+        return self.places + self.people + self.orgs + self.proper_nouns
+
+    def add_person(self, first_name, last_name):
+        self.people.append(first_name + " " + last_name)
+
+    def add_place(self, place):
+        self.places.append(place)
+
+    def add_pnoun(self, p_noun):
+        self.proper_nouns.append(p_noun)
+
+    def cleaned(self):
+        return self.tokenized().join(' ')
+
+    def __str__(self):
+        return self.title
+
+    def to_json(self):
+        data_dict = {"title": self.title, "source": self.source, "atime": self.article_time, "adate": self.article_date, "apeople": self.people}
+        return json.dumps(data_dict)
+
+    def create_insert(self) -> str:
+        """ Returns insert statement for article """
+        return f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{self.source}', '{self.title}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;"
+
+
+ProperNoun = namedtuple('ProperNoun', 'noun label') # basically a small container class with fields noun and label
+Place = namedtuple('Place', 'id name')
+Person = namedtuple('Person', 'id name') # name is of type name
+Organization = namedtuple('Organization', 'id name')
+Name = namedtuple('Name', 'first_name last_name')
+
+
+class HeadlineParser():
+    """ Provides functionality to discover names, places, and other proper nouns mentioned in headline """
+    def __init___(self, headline: ArticleHeadline):
+        self.headline = headline
+        self.connection = psql_util.get_db_connection()
+
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
         proper_nouns: List[ProperNoun] = self.get_all_proper()
         for candidate in proper_nouns:
-            try:
-                if self.num_words(candidate.noun) == 1:
-                    self.parse_single_word(candidate)
-                else:
-                    self.parse_long_phrase(candidate)
-            except NameNotFound or WordAdded:
-                continue
+            if self.num_words(candidate.noun) == 1:
+                self.parse_single_word(candidate)
+            else:
+                self.parse_long_phrase(candidate)
+
+    def num_words(self, phrase) -> int:
+        return len(phrase.split(' '))
 
     def get_all_proper(self) -> List[ProperNoun]:
         """ Get list of all proper nouns using spaCy"""
         nl_processor = spacy.load("en_core_web_sm")
         analyzed_title = nl_processor(self.title)
-        return [ProperNoun(ent.text_, ent.label_) for ent in analyzed_title.ents]
-
-    def num_words(self, phrase) -> int:
-        return len(phrase.split(' '))
+        return [ProperNoun(ent.text_, ent.label_) for ent in analyzed_title.ents] # ent returns only entities (ie. proper nouns)
 
     def parse_single_word(self, candidate: ProperNoun) -> None:
         """ Parses a single word and if it finds a hit, notes it in the db, etc
@@ -106,40 +126,37 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
         if found_name:
             self.note_name(found_name.id, found_name.name)
             return
-        if self.search_singleorg(candidate):
+        found_org = self.search_singleorg(candidate)
+        if found_org:
+            self.note_org(found_org)
             return
+        self.headline.add_pnoun(candidate)
 
     def search_singleplace(self, candidate_place: str) -> Place:
         """ Checks single word Noun for match to place"""
         place_query = f"Select * from places where pname = '{candidate_place}'"
         search_result = (self.connection, place_query)
-        try: # checks if there are any results
+        if search_result is None: # checks if there are any results
             return Place(search_result['id'], candidate_place)
-        except TypeError: # no search result
-            return None
+        # will return none if search_result = None
 
     def note_place(self, place_id: int, place_name: str):
-        link_headline_place(self.id, place_id)
-        self.places.append(place_name)
-
+        psql_util.link_headline_place(self.id, place_id)
+        self.headline.add_place(place_name)
 
     def search_singlename(self, candidate_person: str) -> Person:
         person_query = f"Select * from famousPeople where last_name = '{candidate_person}'"
-        search_person = query_full_row(person_query, self.connection)
+        search_person = psql_util.query_full_row(person_query, self.connection)
         try: # checks if there are any results
             return Person(search_person['id'], Name(search_person['first_name'], search_person['last_name']))
         except TypeError:
             scraped_name = self.scrape_name(candidate_person)
             if scraped_name:
-                newperson_Id = query_single_field(f"SELECT id FROM famousPeople WHERE lastName = {scraped_name.last_name} and firstName = {scraped_name.first_name}")
+                psql_util.add_famous(scraped_name, 2, "", self.connection)
+                newperson_Id = psql_util.query_single_field(f"SELECT id FROM famousPeople WHERE lastName = {scraped_name.last_name} and firstName = {scraped_name.first_name}")
                 return Person(newperson_Id, scraped_name)
             else:
                 return None
-
-    def search_singleorg(self, candidate):
-        """ Will search organizations table for possible match to candidate"""
-        pass
-
 
     def scrape_name(self, name) -> Name:
         """ Scrapes a given last name off the web to find the first name"""
@@ -152,8 +169,13 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
             return None
 
     def note_name(self, linked_person: Person):
-        link_headline_person(self.id, linked_person.id)
-        self.places.append(linked_person.name.first_name + " " + linked_person.name.last_name)
+        psql_util.link_headline_person(self.id, linked_person.id)
+        self.headline.add_person(linked_person.name.first_name + " " + linked_person.name.last_name)
+
+
+    def search_singleorg(self, candidate):
+        """ Will search organizations table for possible match to candidate"""
+        pass
 
     def parse_long_phrase(self, candidate)-> None:
         """ Incomplete. Will parse and lemmatize the candidate and then search against databases"""

@@ -2,10 +2,11 @@ import tweepy, time
 from typing import List
 from headlines.twitter_streamer import Tweet
 from headlines.psql_util import execute_multiple_inserts
-from headlines.twitter_streamer import API_keys
+from headlines.twitter_streamer import API_keys # in .gitignore to protect API keys
 
 
 def get_tweets(tracked_words: List[str], time_limit = 300) -> List[Tweet]:
+    """ Get list of all tweets"""
     twitter_api = get_api()
     listener = TwitterListener(time_limit)
     stream = tweepy.Stream(auth=twitter_api.auth, listener=listener,
@@ -15,6 +16,7 @@ def get_tweets(tracked_words: List[str], time_limit = 300) -> List[Tweet]:
 
 
 def get_api():
+    """ Receive instance of twitter API"""
     api_key = API_keys.get_api_key()
     api_secret_key = API_keys.get_secret_key()
     access_token =  API_keys.get_access_token()
@@ -24,9 +26,11 @@ def get_api():
     return tweepy.API(authentication) # twitter API
 
 
-
 class TwitterListener(tweepy.StreamListener):
-    """ Stream establishes single persistent connection to stream realtime tweets"""
+    """
+    Class modifies way Stream will react when it receives a tweet
+    Stream establishes single persistent connection to stream realtime tweets
+    """
     def __init__(self, time_limit=200):
         super(TwitterListener, self).__init__()
         self.start_time = time.time()

@@ -1,7 +1,7 @@
 import csv
 from headlines.psql_util import get_db_connection
 
-#THIS FILE WILL ONLY BE RUN ONCE TO SET UP THE FAMOUS PERSON POSTGTGRES DB
+#THIS FILE WILL ONLY BE RUN ONCE TO SET UP PART OF THE FAMOUS PERSON POSTGTGRES DB
 
 # data taken from https://github.com/unitedstates/congress-legislators
 def get_congresspeople():
