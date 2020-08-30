@@ -1,24 +1,62 @@
-Package commit_headlinesDB:  Responsible for adding news queries to ElasticSearch and Postgres
+Design decisions:
+    Q. Why were so many NLP modules used? Why not use just one?
+    A. NLP modules are immature, and they offer different functionalities. For instance, spaCy is the best NLP module for Named Entity Recognition, but offers no semantic analysis, so TextBlob was used for semantic analysis. spaCy also doesn't include NDA - sci-kitlearn was used for that. Often the packages were used together (ex. spaCy's stopwords in sci-kitlearns tokenizer). As a general rule, I used spaCy wherever possible since it is the most modern and powerful, and other modules wherever spaCy did not contain a feature. 
+    Q. Why use ElasticSearch to match headlines to Topics? Why not use results from the Topics clustering algorithm (ie. seeing which headline contributed to which topic)?
+    A. Two reasons. First, NDA can use one headline to generate words for multiple topics. It's not really possible to know which Topic it contributed more to, even if it contributed more words to one topic than another. ElasticSearch is simply a more flexible option. Secondly, new headlines that are scraped after the topic clustering is perfomed (ie. will be relying on topics generated earlier) need to be mapped quickly, and ElasticSearch will be used for them. It is a little unusual to map some headlines to Topics with NDA, and some with ElasticSearch, so ElasticSearch is always used
+    Q. How is the code organized in files? 
+    A. Multiple packages are used to seperate the Twitter functionality from the rest of the project (since the twitter analysis is largely independant). The SetupDB    package was created to seperate the program from code that is run once (the setupDB code). In general new python files were created when functionality inside the file was used in more than one other place so you don't have to dig around giant files to find relevant code. Many functions were created that are not bound to a class: they are stateless, and there was no reason to marry them to an object, which is just a waste of overhead when calling are them. 
+   Q. Why use so many explicit checks for Names? Why not just rely on Named Entity Recognition?
+   A. Named Entity Recognition is too fragile and unreliable. Explicit checks, while more annoying to code, are far more reliable.
+data - folder of files in various formats with data such as names, places and organizations. These have been added to postgres tables
+src - source folder
+Package headlines:  main package
   Modules
-  webscraper - scrapes web for headlines and to research given last names
-  basic_frequency - simple postgres queries to see how common a search term is in headlines. Used for testing purposes
-  commit_headlines - adds headlines to postgres by calling functions from webscraper module
-  webscraper - scrapes headlines using BeautifulSoup4
-  database_connector - provides functionality to connect to postgres
-  
-Package headlines: responsible for holding classes to represent articles and other central classes for the program
+  extract_topics - uses 
   article_headline - hold basic headline class attributes
   advanced_headline - has more advanced functionality, such as parsing headlines using NLP for people, organizations, and places
-  clustering - incomplete
-
+  psql_util - contains many functions to perform postgreSQL operations such as querying and writing data of specific types
+  es_util - contains some functions to index topics
+  assign_articles - assigns articles to topics by searching them against the topics elasticsearch index
+  webscraper - scrapes headlines using BeautifulSoup4 and finds index on previosuly unfound entities from the web (incomplete)
+ 
 Package twitter_streamer -
   API_keys - Provides interface to API keys. Not tracked by git to keep API keys secure. 
   search_tweets - uses the twitter_stream to get tweets based on keywords
   twitter_stream - extends Tweepy.stream to change stream behavior when tweet is recieved
   
-Package setup_DB - holds python scripts to parse data files and add the data to appropiate tables
-  numerous scripts to add from data files to postgres
+Package setup_DB - holds python scripts to parse data files and add the data to appropiate tables. They are intended to be ran once, so their organization is minimal
 
+ ElasticSearch indices
+ Topics
+         "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0  # only 1 machine so this is pointless for now
+        },
+
+        'mappings': {
+            'document_fields': {
+                'properties': {
+                    'ident': {'index': 'not_analyzed', 'type': 'int'},
+                    'keywords': {'index': 'analyzed', 'type': 'string'},
+                }}}
+    }
+    Headlines (for search later)
+            "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0 #only 1 machine so this is pointless for now
+        },
+
+        'mappings': {
+            'document_fields': {
+                'properties': {
+                    'ident': {'index': 'not_analyzed', 'type': 'int'}, # to avoid confusion with id of document
+                    'title': {'index': 'analyzed', 'type': 'string'},
+                    'organizations': {'index': 'analyzed', 'type': 'string'},
+                    'people': {'index': 'analyzed', 'type': 'string'},
+                    'places': {'index': 'analyzed', 'type': 'string'}
+                }}}
+    }
+ 
 
 SQLscripts:
   holds scripts to generate tables, as well as to manually add/manipulate individual rows to the tables
@@ -35,8 +73,10 @@ SQLscripts:
  public | lastnames      | table | postgres
  public | organizations  | table | postgres
  public | places         | table | postgres
+  public | tweets         | table | postgres
 -- is psql database
 create TABLE allHeadlines (id SERIAL primary key, newsOrg varchar(8), title text unique, articleDate date, articleTime time);
+create table tweets(message text);
 create TABLE famouspeople(id serial primary key, level int, lastname text, firstname text, description text);
 create table places(id SERIAL primary key, pname text, realName text unique); -- real name is for case of synonyms (ex. America, USA, United States
 create table organizations(id serial primary key, orgname text unique, abbreviation text);
@@ -48,37 +88,5 @@ create table lastnames(name text unique, ranking int);
 create table firstNames(name text unique, ranking int);
 
  
- ElasticSearch 7
- structure of headlines index
- {
-        "settings": {
-            "number_of_shards": 1,
-            "number_of_replicas": 0 #only 1 machine, so more would be pointless for now
-        },
 
-        'mappings': {
-            'examplecase': {
-                'properties': {
-                    'title': {'index': 'analyzed', 'type': 'string'},
-                    'id': {'index': 'not_analyzed', 'type': 'int'},
-                }}}
-    }
- Structure of clusters index
- { {
-        "settings": {
-            "number_of_shards": 1,
-            "number_of_replicas": 0  # only 1 machine so more would be pointless for now
-        },
-
-        'mappings': {
-            'examplecase': {
-                'properties': {
-                    'titles': {'index': 'analyzed', 'type': 'string'},
-                    'keywords': {'index': 'analyzed', 'type': 'string'},
-                    'ids': {'index': 'not_analyzed', 'type': 'int'},
-                }}}
-    }
-  
- 
-  
   
