@@ -1,3 +1,12 @@
+Design decisions:
+    Q. Why were so many NLP modules used? Why not use just one?
+    A. NLP modules are immature, and they offer different functionalities. For instance, spaCy is the best NLP module for Named Entity Recognition, but offers no semantic analysis, so TextBlob was used for semantic analysis. spaCy also doesn't include NDA - sci-kitlearn was used for that. Often the packages were used together (ex. spaCy's stopwords in sci-kitlearns tokenizer). As a general rule, I used spaCy wherever possible since it is the most modern and powerful, and other modules wherever spaCy did not contain a feature. 
+    Q. Why use ElasticSearch to match headlines to Topics? Why not use results from the Topics clustering algorithm (ie. seeing which headline contributed to which topic)?
+    A. Two reasons. First, NDA can use one headline to generate words for multiple topics. It's not really possible to know which Topic it contributed more to, even if it contributed more words to one topic than another. ElasticSearch is simply a more flexible option. Secondly, new headlines that are scraped after the topic clustering is perfomed (ie. will be relying on topics generated earlier) need to be mapped quickly, and ElasticSearch will be used for them. It is a little unusual to map some headlines to Topics with NDA, and some with ElasticSearch, so ElasticSearch is always used
+    Q. How is the code organized in files? 
+    A. Multiple packages are used to seperate the Twitter functionality from the rest of the project (since the twitter analysis is largely independant). The SetupDB    package was created to seperate the program from code that is run once (the setupDB code). In general new python files were created when functionality inside the file was used in more than one other place so you don't have to dig around giant files to find relevant code. Many functions were created that are not bound to a class: they are stateless, and there was no reason to marry them to an object, which is just a waste of overhead when calling are them. 
+   Q. Why use so many explicit checks for Names? Why not just rely on Named Entity Recognition?
+   A. Named Entity Recognition is too fragile and unreliable. Explicit checks, while more annoying to code, are far more reliable.
 data - folder of files in various formats with data such as names, places and organizations. These have been added to postgres tables
 src - source folder
 Package headlines:  main package
