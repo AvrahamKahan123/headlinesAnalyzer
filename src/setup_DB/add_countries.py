@@ -1,7 +1,7 @@
-from commit_headlinesDB import database_connector
+from headlines.psql_util import get_db_connection
 
 if __name__ == '__main__':
-    connection = database_connector.get_db_connection()
+    connection = get_db_connection()
     cursor = connection.cursor()
     with open("../../data/countries.txt") as country_file: # source https://textlists.info/geography/countries-of-the-world/
         countries = country_file.readlines()

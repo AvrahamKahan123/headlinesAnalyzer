@@ -2,17 +2,19 @@ import spacy
 from collections import namedtuple
 from typing import List
 from datetime import datetime
-from headlines import article_headline
-from commit_headlinesDB import database_connector
-from commit_headlinesDB import webscraper
-from commit_headlinesDB import create_link
-from commit_headlinesDB.psql_util import query_single_field
-from commit_headlinesDB.psql_util import query_full_row
-
-
+from nltk.tokenize import WhitespaceTokenizer
+from nltk.stem.snowball import SnowballStemmer
+from headlines import article_headline, webscraper
+from headlines.psql_util import query_single_field
+from headlines.psql_util import query_full_row
+from headlines.psql_util import get_db_connection
+from headlines.psql_util import link_headline_person
+from headlines.psql_util import link_headline_place
 
 """
 TRANSITIONING CODE FROM USING MORE EXPLICIT CHECKS TO RELYING MORE ON spaCy MODULE. IS NOT FUNCTIONAL OR EVEN LOGICAL YET
+
+PARSING of titles IS COMPLETELY NON FUNCTIONAL, AND ISNT EVEN VERY CLEAR RIGHT NOW.
 """
 
 class WordAdded(Exception):
@@ -32,9 +34,42 @@ Name = namedtuple('Name', 'first_name last_name')
 class AdvancedHeadline(article_headline.ArticleHeadline):
     """ Provides functionality to discover names, places, and other proper nouns mentioned in headlines"""
 
-    def __init___(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now())):
-        super().__init__(title, source)
-        self.connection = database_connector.get_db_connection()
+    def __init___(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now()), id = -1,
+                 people = [], places = [], proper_nouns = []):
+        super().__init__(title, source, article_date, article_time, id, people, places, proper_nouns)
+        self.connection = get_db_connection()
+        self.topic_index = -1 # will be used to save
+
+    def get_all_pnouns(self):
+        """ Returns list containing all proper nouns for this headline"""
+        return self.places + self.people + self.orgs + self.proper_nouns
+
+    def cleaned(self):
+        return self.tokenized().join(' ')
+
+    def tokenized(self) -> List[str]:
+        """ Extracts stemmed and cleaned tokens of title. May be used as part of the parsing"""
+        tokens = self.tokenizer(self.title)
+        cleaned_tokens = self.remove_stop_words(tokens)
+        stemmed_tokens = self.stemmer(cleaned_tokens)
+        return stemmed_tokens
+
+    def tokenizer(self, text):
+        """ Tokenize title"""
+        tokenizer = WhitespaceTokenizer()
+        tokenized_list = tokenizer.tokenize(self.title)
+        return tokenized_list
+
+    def remove_stop_words(self, tokens):
+        stopwords = spacy.lang.en.stop_words.STOP_WORDS
+        cleaned_tokens = filter(lambda x: x not in stopwords, tokens)
+        return cleaned_tokens
+
+    def stemmer(tokens: List[str]):
+        """ Stem tokenized title"""
+        snowball = SnowballStemmer(language='english')
+        stemmed_list = [snowball.stem(word) for word in tokens]
+        return stemmed_list
 
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
@@ -58,8 +93,10 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
         return len(phrase.split(' '))
 
     def parse_single_word(self, candidate: ProperNoun) -> None:
-        """ Parses a single word and if it finds a hit, notes it in the db, etc"""
+        """ Parses a single word and if it finds a hit, notes it in the db, etc
+        Code must be added to remove punctuation and if need be, lemmatize the word"""
         if candidate.label == "NORP": # some kind of group, ex. 'Israeli'
+            pass
             # code to strip off tailing text (ex. the -ian in 'Floridian'). Another function will be made to support fuzzier matching for places
         found_place: Place = self.search_singleplace(candidate.noun) # will be none if is not place
         if found_place:
@@ -82,12 +119,12 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
             return None
 
     def note_place(self, place_id: int, place_name: str):
-        create_link.link_headline_place(self.id, place_id)
+        link_headline_place(self.id, place_id)
         self.places.append(place_name)
 
 
     def search_singlename(self, candidate_person: str) -> Person:
-        person_query = f"Select * from famousPeople where last_name = '{candidate_name}'"
+        person_query = f"Select * from famousPeople where last_name = '{candidate_person}'"
         search_person = query_full_row(person_query, self.connection)
         try: # checks if there are any results
             return Person(search_person['id'], Name(search_person['first_name'], search_person['last_name']))
@@ -115,10 +152,11 @@ class AdvancedHeadline(article_headline.ArticleHeadline):
             return None
 
     def note_name(self, linked_person: Person):
-        create_link.link_headline_person(self.id, linked_person.id)
+        link_headline_person(self.id, linked_person.id)
         self.places.append(linked_person.name.first_name + " " + linked_person.name.last_name)
 
     def parse_long_phrase(self, candidate)-> None:
+        """ Incomplete. Will parse and lemmatize the candidate and then search against databases"""
         if (self.is_place(candidate)):
             self.add_place(candidate.join(' '))
 

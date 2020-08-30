@@ -2,8 +2,8 @@ import elasticsearch7
 
 
 def get_instance():
-    es = elasticsearch7.Elasticsearch({'host': 'localhost', 'port': 9200}, timeout=300)
-    return es
+    es_instance = elasticsearch7.Elasticsearch({'host': 'localhost', 'port': 9200}, timeout=300)
+    return es_instance
 
 
 def compose_headlines_index():
@@ -14,16 +14,19 @@ def compose_headlines_index():
         },
 
         'mappings': {
-            'examplecase': {
+            'document_fields': {
                 'properties': {
+                    'ident': {'index': 'not_analyzed', 'type': 'int'}, # to avoid confusion with id of document
                     'title': {'index': 'analyzed', 'type': 'string'},
-                    'id': {'index': 'not_analyzed', 'type': 'int'},
+                    'organizations': {'index': 'analyzed', 'type': 'string'},
+                    'people': {'index': 'analyzed', 'type': 'string'},
+                    'places': {'index': 'analyzed', 'type': 'string'}
                 }}}
     }
     return request_body
 
 
-def compose_cluster_index():
+def compose_topic_index():
     request_body = {
         "settings": {
             "number_of_shards": 1,
@@ -31,11 +34,10 @@ def compose_cluster_index():
         },
 
         'mappings': {
-            'examplecase': {
+            'document_fields': {
                 'properties': {
-                    'titles': {'index': 'analyzed', 'type': 'string'},
+                    'ident': {'index': 'not_analyzed', 'type': 'int'},
                     'keywords': {'index': 'analyzed', 'type': 'string'},
-                    'ids': {'index': 'not_analyzed', 'type': 'int'},
                 }}}
     }
     return request_body
@@ -44,5 +46,5 @@ def compose_cluster_index():
 if __name__ == '__main__':
     es = get_instance()
     es.indices.create(index='headlinesIndex', body=compose_headlines_index())
-    es.indices.create(index='clustersIndex', body=compose_headlines_index())
+    es.indices.create(index='topicsIndex', body=compose_headlines_index())
 

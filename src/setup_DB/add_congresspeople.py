@@ -1,5 +1,5 @@
 import csv
-from commit_headlinesDB import database_connector
+from headlines.psql_util import get_db_connection
 
 #THIS FILE WILL ONLY BE RUN ONCE TO SET UP THE FAMOUS PERSON POSTGTGRES DB
 
@@ -12,7 +12,7 @@ def get_congresspeople():
 
 
 if __name__ == '__main__':
-    connection = database_connector.get_db_connection()
+    connection = get_db_connection()
     cursor = connection.cursor()
     congress_people = get_congresspeople()
     for congress_person in congress_people:

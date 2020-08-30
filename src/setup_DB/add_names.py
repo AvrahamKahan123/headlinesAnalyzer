@@ -1,4 +1,4 @@
-from commit_headlinesDB import database_connector
+from headlines.psql_util import get_db_connection
 
 
 def add_first_names(cursor, connection):
@@ -23,7 +23,7 @@ def add_last_names(cursor, connection):
         connection.commit()
 
 if __name__ == '__main__':
-    connection = database_connector.get_db_connection()
+    connection = get_db_connection()
     cursor = connection.cursor()
     add_first_names(cursor, connection)
     add_last_names(cursor, connection)

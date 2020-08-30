@@ -6,7 +6,7 @@ create table organizations(id serial primary key, orgname text unique, abbreviat
 create table headlinePlaces(headlineId int , placeId int, foreign key(headlineId) references allHeadlines(id), foreign key(placeId) references places(id));
 create table headlinepeople(headlineId int , personId int, foreign key(headlineId) references allHeadlines(id), foreign key(personId) references famouspeople(id));
 create table headlineOrgs(headlineId int , orgId int, foreign key(headlineId) references allHeadlines(id), foreign key(orgId) references organizations(id));
-create table Clusters(clusterId Serial primary key, keywords text, numTweets int, avg_rating double precision);
+create table Topics(clusterId Serial primary key, keywords text, numTweets int, avg_rating double precision);
 
 
 --create table properNouns(name text, level int, acronym VARCHAR(15), primary key(name, level));
