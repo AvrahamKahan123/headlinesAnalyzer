@@ -10,5 +10,5 @@ The program adds values and names to the database by scraping the web (this feat
 The program also indexes title names so it
 
 # current state
-Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API) is complete, yet they are not yet linked together to complete the pipeline. 
+Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API) is complete, yet they are not yet linked together to complete the pipeline. The only feature that is very underdeveloped as of now is the analyzer to try to extract names, places, and organizations from headlines
 
