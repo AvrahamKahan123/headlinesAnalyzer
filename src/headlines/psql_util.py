@@ -33,13 +33,14 @@ def execute_insert(insert_stmt: str, connection=get_db_connection()): # default 
     connection.commit()
 
 
-def query_single_field(query: str, connection):
+def query_single_field(query: str, connection=get_db_connection()):
+    """ Returns first field. Insert statement should be of form SELECT columnname from..."""
     cursor = connection.cursor()
     cursor.execute(query)
     return query.fetchone()[0]
 
 
-def query_full_row(query: str, connection):
+def query_full_row(query: str, connection=get_db_connection()):
     cursor = connection.cursor()
     cursor.execute(query)
     return cursor.fetchone()

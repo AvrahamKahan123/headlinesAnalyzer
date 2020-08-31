@@ -9,22 +9,21 @@ from headlines import psql_util
 
 
 """
-TRANSITIONING CODE FROM USING MORE EXPLICIT CHECKS TO RELYING MORE ON spaCy MODULE. IS NOT FUNCTIONAL OR EVEN LOGICAL YET
-
-PARSING of titles IS NOT FUNCTIONAL YET
+TRANSITIONING CODE FROM USING MORE EXPLICIT CHECKS TO RELYING MORE ON spaCy MODULE. IS NOT FUNCTIONAL for proper noun of longer than 1 token
 """
 
 
 class ArticleHeadline:
     """ Represents headline parsed from web. Contains id of Article in postgres, as well as extracted peoples, places, and organizations"""
     def __init__(self, title: str, source: str, article_date = datetime.date(datetime.now()), article_time = datetime.time(datetime.now()), id = -1,
-                 people = [], places = [], proper_nouns = []):
+                 people = [], places = [], organizations=[], proper_nouns = []):
         self.title = title.replace("\'", "\'\'")
         self.source = source
         self.article_date = article_date
         self.article_time = article_time
         self.people = people
         self.places = places
+        self.organizations = organizations
         self.proper_nouns = proper_nouns
         self.id = id
         self.topic_index = -1
@@ -60,8 +59,11 @@ class ArticleHeadline:
     def add_person(self, first_name, last_name):
         self.people.append(first_name + " " + last_name)
 
-    def add_place(self, place):
+    def add_place(self, place: str):
         self.places.append(place)
+
+    def add_organization(self, organization: str):
+        self.organizations.append(organization)
 
     def add_pnoun(self, p_noun):
         self.proper_nouns.append(p_noun)
@@ -90,9 +92,9 @@ Name = namedtuple('Name', 'first_name last_name')
 
 class HeadlineParser():
     """ Provides functionality to discover names, places, and other proper nouns mentioned in headline """
-    def __init___(self, headline: ArticleHeadline):
+    def __init___(self, headline: ArticleHeadline, connection = psql_util.get_db_connection()):
         self.headline = headline
-        self.connection = psql_util.get_db_connection()
+        self.connection = connection
 
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
@@ -120,13 +122,13 @@ class HeadlineParser():
             # code to strip off tailing text (ex. the -ian in 'Floridian'). Another function will be made to support fuzzier matching for places
         found_place: Place = self.search_singleplace(candidate.noun) # will be none if is not place
         if found_place:
-            self.note_place(found_place.id, found_place.name)
+            self.note_place(found_place.id, found_place.name) # notes in postgres and also in self.headline
             return
         found_name: Person = self.search_singlename(candidate)
         if found_name:
             self.note_name(found_name.id, found_name.name)
             return
-        found_org = self.search_singleorg(candidate)
+        found_org: Organization = self.search_singleorg(candidate)
         if found_org:
             self.note_org(found_org)
             return
@@ -147,13 +149,14 @@ class HeadlineParser():
     def search_singlename(self, candidate_person: str) -> Person:
         person_query = f"Select * from famousPeople where last_name = '{candidate_person}'"
         search_person = psql_util.query_full_row(person_query, self.connection)
-        try: # checks if there are any results
+        if search_person: # isnt None
             return Person(search_person['id'], Name(search_person['first_name'], search_person['last_name']))
-        except TypeError:
-            scraped_name = self.scrape_name(candidate_person)
+        else:
+            scraped_name: Name = self.scrape_name(candidate_person)
             if scraped_name:
                 psql_util.add_famous(scraped_name, 2, "", self.connection)
-                newperson_Id = psql_util.query_single_field(f"SELECT id FROM famousPeople WHERE lastName = {scraped_name.last_name} and firstName = {scraped_name.first_name}")
+                newperson_Id = psql_util.query_single_field(f"SELECT id FROM famousPeople WHERE lastName = {scraped_name.last_name} and firstName = {scraped_name.first_name}",
+                                                            self.connection)
                 return Person(newperson_Id, scraped_name)
             else:
                 return None
@@ -172,10 +175,18 @@ class HeadlineParser():
         psql_util.link_headline_person(self.id, linked_person.id)
         self.headline.add_person(linked_person.name.first_name + " " + linked_person.name.last_name)
 
-
     def search_singleorg(self, candidate):
         """ Will search organizations table for possible match to candidate"""
-        pass
+        query = f"SELECT * FROM Organizations WHERE (orgName = {candidate} OR shortName = {candidate};"
+        org_found = psql_util.query_full_row(query, self.connection)
+        if org_found:
+            return Organization(id=org_found['id'], name=org_found['orgname'])
+        else:
+            return None
+
+    def note_org(self, org: Organization):
+        psql_util.link_headline_org(self.headline.id, org.id, self.connection)
+        self.headline.add_org(org)
 
     def parse_long_phrase(self, candidate)-> None:
         """ Incomplete. Will parse and lemmatize the candidate and then search against databases"""
