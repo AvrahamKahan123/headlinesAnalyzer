@@ -1,5 +1,5 @@
 # headlinesAnalyzer
-Incomplete. News and Twitter analyzer using python Natural Language Processing Modules and ElasticSearch. Attempts to create over time a tracker for topics, how many articles there are about that topic, and how people are tweeting about that topic
+Currently incomplete (~75% done). News and Twitter analyzer using python Natural Language Processing Modules and ElasticSearch. Attempts to create over time a tracker for topics, how many articles there are about that topic, and how people are tweeting about that topic
 # explanation
 Flow chart for program can be found by clicking by viewing flow_chart.pdf
 See overview.txt for full explanation of program structure module by module and explanation of design decisions
