@@ -1,6 +1,6 @@
 Design decisions:
     Q. Why were so many NLP modules used? Why not use just one?
-    A. NLP modules are immature, and they offer different functionalities. For instance, spaCy is the best NLP module for Named Entity Recognition, but offers no semantic analysis, so TextBlob was used for semantic analysis. spaCy also doesn't include NDA - sci-kitlearn was used for that. Often the packages were used together (ex. spaCy's stopwords in sci-kitlearns tokenizer). As a general rule, I used spaCy wherever possible since it is the most modern and powerful, and other modules wherever spaCy did not contain a feature. 
+    A. NLP modules are immature, and they offer different levels of functionality. For instance, spaCy is the best NLP module for Named Entity Recognition, but offers no semantic analysis, so TextBlob was used for semantic analysis. spaCy also doesn't include NDA - sci-kitlearn was used for that. Often the packages were used together (ex. spaCy's stopwords in sci-kitlearns tokenizer). As a general rule, I used spaCy wherever possible since it is the most modern and powerful, and other modules wherever spaCy did not contain a feature. 
     Q. Why use ElasticSearch to match headlines to Topics? Why not use results from the Topics clustering algorithm (ie. seeing which headline contributed to which topic)?
     A. Two reasons. First, NDA can use one headline to generate words for multiple topics. It's not really possible to know which Topic it contributed more to, even if it contributed more words to one topic than another. ElasticSearch is simply a more flexible option. Secondly, new headlines that are scraped after the topic clustering is perfomed (ie. will be relying on topics generated earlier) need to be mapped quickly, and ElasticSearch will be used for them. It is a little unusual to map some headlines to Topics with NDA, and some with ElasticSearch, so ElasticSearch is always used
     Q. How is the code organized in files? 
@@ -11,13 +11,12 @@ data - folder of files in various formats with data such as names, places and or
 src - source folder
 Package headlines:  main package
   Modules
-  extract_topics - uses 
-  article_headline - hold basic headline class attributes
-  advanced_headline - has more advanced functionality, such as parsing headlines using NLP for people, organizations, and places
-  psql_util - contains many functions to perform postgreSQL operations such as querying and writing data of specific types
+  extract_topics - uses NDA to extract topics from large list of headlines
+  ArticleHeadline - Has parsing class to extract Proper nouns from ArticleHeadline class, as well as a class to represent Headline objects
+  psql_util - provides client functions to perform operations with psql
   es_util - contains some functions to index topics
   assign_articles - assigns articles to topics by searching them against the topics elasticsearch index
-  webscraper - scrapes headlines using BeautifulSoup4 and finds index on previosuly unfound entities from the web (incomplete)
+  webscraper - scrapes headlines using BeautifulSoup4 and finds information on previosuly unfound entities from the web (partially complete)
  
 Package twitter_streamer -
   API_keys - Provides interface to API keys. Not tracked by git to keep API keys secure. 
@@ -51,42 +50,21 @@ Package setup_DB - holds python scripts to parse data files and add the data to 
                 'properties': {
                     'ident': {'index': 'not_analyzed', 'type': 'int'}, # to avoid confusion with id of document
                     'title': {'index': 'analyzed', 'type': 'string'},
-                    'organizations': {'index': 'analyzed', 'type': 'string'},
-                    'people': {'index': 'analyzed', 'type': 'string'},
-                    'places': {'index': 'analyzed', 'type': 'string'}
+                    'propernouns': {'index': 'analyzed', 'type': 'string'},
                 }}}
     }
  
 
 SQLscripts:
   holds scripts to generate tables, as well as to manually add/manipulate individual rows to the tables
-  SQL schema can be viewed there
-             List of relations
- Schema |      Name      | Type  |  Owner   
---------+----------------+-------+----------
- public | allheadlines   | table | postgres
- public | famouspeople   | table | postgres
- public | firstnames     | table | postgres
- public | headlineorgs   | table | postgres
- public | headlinepeople | table | postgres
- public | headlineplaces | table | postgres
- public | lastnames      | table | postgres
- public | organizations  | table | postgres
- public | places         | table | postgres
-  public | tweets         | table | postgres
 -- is psql database
-create TABLE allHeadlines (id SERIAL primary key, newsOrg varchar(8), title text unique, articleDate date, articleTime time);
-create table tweets(message text);
-create TABLE famouspeople(id serial primary key, level int, lastname text, firstname text, description text);
-create table places(id SERIAL primary key, pname text, realName text unique); -- real name is for case of synonyms (ex. America, USA, United States
-create table organizations(id serial primary key, orgname text unique, abbreviation text);
-create table headlinePlaces(headlineId int , placeId int, foreign key(headlineId) references allHeadlines(id), foreign key(placeId) references places(id));
-create table headlinepeople(headlineId int , personId int, foreign key(headlineId) references allHeadlines(id), foreign key(personId) references famouspeople(id));
-create table headlineOrgs(headlineId int , orgId int, foreign key(headlineId) references allHeadlines(id), foreign key(orgId) references organizations(id));
-
-create table lastnames(name text unique, ranking int);
-create table firstNames(name text unique, ranking int);
-
- 
+create TABLE allHeadlines (id int primary key, newsOrg varchar(8), title text unique, articleDate date, articleTime time);
+create TABLE properNouns (id int primary key, fullName text unique, type varchar(10)); -- type can be place, person, or organization
+create table acronyms(acronym text unique, id int);
+create table abbreviations(abbrevation text unique, id int);
+create table nicknames(nickname text unique, id int, foreign key(id) references properNouns(id));
+create table NORPs(shortName text unique, id int, foreign key(id) references properNouns(id)); -- maps people of ethnicity ('NORPS' in spaCy) to their Countries/Cities
+create table headlinePnouns(headlineId int , pNounId int, foreign key(headlineId) references allHeadlines(id), foreign key(pNounId) references properNouns(id));
+create table Topics(clusterId Serial primary key, keywords text, numTweets int, avg_rating double precision);
 
   
