@@ -1,7 +1,7 @@
 from headlines.psql_util import get_db_connection
 from headlines.psql_util import query_single_field
 
-""" File is to be run once to add companies to organizations table"""
+""" File is to be run once"""
 if __name__ == '__main__':
     connection = get_db_connection()
     cursor = connection.cursor()
