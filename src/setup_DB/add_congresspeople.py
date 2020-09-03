@@ -1,5 +1,6 @@
 import csv
 from headlines.psql_util import get_db_connection
+from headlines.psql_util import get_highest_pNoun_id
 
 #THIS FILE WILL ONLY BE RUN ONCE TO SET UP PART OF THE FAMOUS PERSON POSTGTGRES DB
 
@@ -15,8 +16,9 @@ if __name__ == '__main__':
     connection = get_db_connection()
     cursor = connection.cursor()
     congress_people = get_congresspeople()
+    current_id= get_highest_pNoun_id() + 1
     for congress_person in congress_people:
-        cursor.execute(f"INSERT into famousPeople(level, lastName, firstName, description) values(3, '{congress_person[0]}', '{congress_person[1]}', 'US Congressperson') ;"
-)
+        cursor.execute(f"INSERT into properNounds(id, fullName, type) values({current_id}, '{congress_person[0] + congress_person[1]}', 'PERSON') ;")
+        current_id+=1
     connection.commit()
     connection.close()

@@ -19,9 +19,7 @@ def compose_headlines_index():
                 'properties': {
                     'ident': {'index': 'not_analyzed', 'type': 'int'}, # to avoid confusion with id of document
                     'title': {'index': 'analyzed', 'type': 'string'},
-                    'organizations': {'index': 'analyzed', 'type': 'string'},
-                    'people': {'index': 'analyzed', 'type': 'string'},
-                    'places': {'index': 'analyzed', 'type': 'string'}
+                    'properNouns': {'index': 'analyzed', 'type': 'string'},
                 }}}
     }
     return request_body

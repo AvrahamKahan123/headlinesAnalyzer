@@ -1,9 +1,10 @@
 import psycopg2
 from headlines.webscraper import *
-from headlines.ArticleHeadline import Name
 from headlines.webscraper import get_all_headlines
 
+
 """ PSQL Utility class"""
+
 
 def get_db_connection():
     """ :return a connection to PostgresSQL headlines database"""
@@ -34,10 +35,12 @@ def execute_insert(insert_stmt: str, connection=get_db_connection()): # default 
 
 
 def query_single_field(query: str, connection=get_db_connection()):
-    """ Returns first field. Insert statement should be of form SELECT columnname from..."""
+    """ Returns first field. Insert statement should be of form SELECT columnname from... Will return None if no matches"""
     cursor = connection.cursor()
     cursor.execute(query)
-    return query.fetchone()[0]
+    result = cursor.fetchone()
+    if result:
+        return cursor.fetchone()[0]
 
 
 def query_full_row(query: str, connection=get_db_connection()):
@@ -46,29 +49,9 @@ def query_full_row(query: str, connection=get_db_connection()):
     return cursor.fetchone()
 
 
-def create_insert_article(headline: ArticleHeadline)  -> str:
-    """ Returns insert statement for article """
-    return f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{headline.source}', '{headline.title}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;"
-
-def link_headline_place(headline_id: int, place_id: int, connection):
-    insert_stmt = f"INSERT INTO HeadlinePlaces(headlineId, placeId) values({headline_id}, {place_id})"
-    execute_insert(insert_stmt)
-
-
-def link_headline_person(headline_id: int, person_id: int, connection):
-    insert_stmt = f"INSERT INTO HeadlinePlaces(headlineId, person_id) values({headline_id}, {person_id})"
+def link_headline_pnoun(headline_id: int, pNoun_id: int, connection=get_db_connection()):
+    insert_stmt = f"INSERT INTO headlinePnouns(headlineId, pNounId) Values ({headline_id}, {pNoun_id})"
     execute_insert(insert_stmt, connection)
-
-
-def link_headline_org(headline_id: int, org_id: int, connection):
-    insert_stmt = f"INSERT INTO HeadlinePlaces(headlineId, person_id) values({headline_id}, {org_id})"
-    execute_insert(insert_stmt, connection)
-
-
-def add_famous(n: Name, level: int, description: str, connection) -> int:
-    """ Adds a name to the famousPeople PostgreSQL table"""
-    insert_query = f"insert into famousPeople(level, lastName, firstName, Description) values({level}, {n.last_name}, {n.first_name}, '{description}'"
-    execute_insert(insert_query, connection)
 
 
 def add_headlines_SQLdb(headline_connection):
@@ -80,6 +63,13 @@ def add_headlines_SQLdb(headline_connection):
         cursor.execute(add_query)
     headline_connection.commit()
 
+def get_highest_headline_ID(connection=get_db_connection()):
+    query_highest = f"SELECT MAX(ID) from allheadlines"
+    return query_single_field(query_highest, connection)
+
+def get_highest_pNoun_id(connection=get_db_connection()):
+    query_highest = f"SELECT MAX(ID) from ProperNouns"
+    return query_single_field(query_highest, connection)
 
 def update_DB():
     """ Updates Postgres with latest headlines"""
@@ -88,6 +78,7 @@ def update_DB():
         with connection.cursor() as cursor:
             add_headlines_SQLdb(connection)
     connection.close()
+
 
 if __name__ == '__main__':
     update_DB()
