@@ -17,10 +17,11 @@ def get_full_name(last_name):
     html = requests.get(searchURL).text
     name_parser = BeautifulSoup(html, 'html5lib')
     possible_hits = name_parser.find_all('div', class_="BNeawe UPmit AP7Wnd")
+    if possible_hits is None:
+        return None
     for hit in possible_hits:
         if hit.text.startswith("https://en.wikipedia.org › wiki ›"):
             return hit.text.split("›")[-1].replace("_", " ")
-    raise RuntimeError("No name was found")
 
 
 def get_FOX_headlines() -> List[str]:

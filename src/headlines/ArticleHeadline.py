@@ -61,7 +61,7 @@ class ArticleHeadline:
         return self.title
 
     def to_json(self):
-        data_dict = {"title": self.title, "source": self.source, "atime": self.article_time, "adate": self.article_date, "apeople": self.people}
+        data_dict = {"title": self.title, "source": self.source, "apnouns": self.proper_nouns}
         return json.dumps(data_dict)
 
     def create_insert(self) -> str:
