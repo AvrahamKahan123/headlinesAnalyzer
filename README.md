@@ -8,8 +8,11 @@ First, it scrapes several news-sites using BeautifulSoup and saves these results
 New topics are generated from scratch every set time interval, and during that interval new headlines can be classified by searching their titles against the topics index
 The program makes use of a great deal of data to parse the Headlines for names and places. This data is stored mostly in postgreSQL tables. This data is neccesary since testing showed that Machine Learning modules are usually not very good at telling the difference between last names, organizations, and places (ex. in one test, "Biden" was characterized as a 'geopolitical entity')
 The program adds values and names to the database by scraping the web (this feature is complete for names already) automatically
-The program also indexes title names so it
+The program also indexes title names so to make them searchable. Signifigant modification to the schema has been done recently, so some of the code may as of now be illogical
 
 # current state
-Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API) is complete, yet they are not yet linked together to complete the pipeline. The only feature that is very underdeveloped as of now is the analyzer to try to extract names, places, and organizations from headlines
+Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API, extract places, people and organizations from the Headlines) is complete, yet they are not yet linked together to complete the pipeline. Basic unit tests have verified some components
+
+# current Issues 
+Work will be done to make addditons to postgres thread-safe (now it relies on just grabbing the next highest available integer for id before a bulk insert, which is dangerous, for obvious reasons, unless the query for the next available integer is coupled with the inserts which is not always possible). Testing will begin in rigor soon on the whole project
 
