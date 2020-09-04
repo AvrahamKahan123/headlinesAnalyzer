@@ -8,7 +8,7 @@ from headlines import psql_util
 
 
 class ArticleHeadline:
-    """ Represents headline parsed from web. Contains id of Article in postgres, as well as extracted peoples, places, and organizations"""
+    """ Represents headline scraped from the web. Contains id of Article in postgres, as well as extracted peoples, places, and organizations"""
     def __init__(self, title: str, source: str, id = -1,
                   proper_nouns = []):
         self.title = title.replace("\'", "\'\'")
@@ -83,10 +83,14 @@ class HeadlineParser():
 
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
+        self.interpret_abbreiviations()
         proper_nouns: List[ProperNoun] = self.get_all_proper()
         for candidate in proper_nouns:
             self.parse_candidate(candidate)
 
+    def intepret_abbreviations(self):
+        """ Will use abbreivations table to understand abbreviations in headline and set that as new headline. Ex. 'Conn.' -> 'Connecticut' """
+        pass
     def get_all_proper(self) -> List[ProperNoun]:
         """ Get list of all wanted (ie. of a useful type that we might want to track) proper nouns using spaCy"""
         nl_processor = spacy.load("en_core_web_sm")

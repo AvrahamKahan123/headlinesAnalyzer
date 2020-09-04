@@ -11,7 +11,8 @@ The program adds values and names to the database by scraping the web (this feat
 The program also indexes title names so to make them searchable. Signifigant modification to the schema has been done recently, so some of the code may as of now be illogical
 
 # current state
-Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API, extract places, people and organizations from the Headlines) is complete, yet they are not yet linked together to complete the pipeline. Basic unit tests have verified some components
+Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API, extract places, people and organizations from the Headlines) is complete, yet they are not yet linked together to complete the pipeline. Extracting Proper nouns from the 
+headlines still lacks some functionality (parsing abbreivations speicifically). Basic unit tests have verified some components
 
 # current Issues 
 Work will be done to make addditons to postgres thread-safe (now it relies on just grabbing the next highest available integer for id before a bulk insert, which is dangerous, for obvious reasons, unless the query for the next available integer is coupled with the inserts which is not always possible). Testing will begin in rigor soon on the whole project
