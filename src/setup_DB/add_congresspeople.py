@@ -2,7 +2,7 @@ import csv
 from headlines.psql_util import get_db_connection
 from headlines.psql_util import get_highest_pNoun_id
 
-#THIS FILE WILL ONLY BE RUN ONCE TO SET UP PART OF THE FAMOUS PERSON POSTGTGRES DB
+#THIS FILE WILL ONLY BE RUN ONCE TO SET UP PART OF THE ProperNOUN table in POSTGTGRES DB
 
 # data taken from https://github.com/unitedstates/congress-legislators
 def get_congresspeople():
