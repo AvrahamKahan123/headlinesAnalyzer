@@ -1,4 +1,6 @@
 Design decisions:
+    Q. Some news sites put tags on their articles so search engines will index them. Why not just use those instead of parsing and analyzing manually?
+    A. speed would be really poorly affected by that, because a web-crawler would have to access each and every page - which would be very slow. 
     Q. Why were so many NLP modules used? Why not use just one?
     A. NLP modules are immature, and they offer different levels of functionality. For instance, spaCy is the best NLP module for Named Entity Recognition, but offers no semantic analysis, so TextBlob was used for semantic analysis. spaCy also doesn't include NDA - sci-kitlearn was used for that. Often the packages were used together (ex. spaCy's stopwords in sci-kitlearns tokenizer). As a general rule, I used spaCy wherever possible since it is the most modern and powerful, and other modules wherever spaCy did not contain a feature. 
     Q. Why use ElasticSearch to match headlines to Topics? Why not use results from the Topics clustering algorithm (ie. seeing which headline contributed to which topic)?
