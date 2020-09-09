@@ -68,7 +68,7 @@ class ArticleHeadline:
         """ Returns insert statement for article """
         return f"INSERT into allheadlines(newsorg, title, articledate, articletime) values('{self.source}', '{self.title}', CURRENT_DATE, CURRENT_TIME) ON CONFLICT DO NOTHING;"
 
-
+AbbrevReplacement = namedtuple("AbbrevReplacement", "abbrev full")
 ProperNoun = namedtuple('ProperNoun', 'noun label') # basically a small container class with fields noun and label
 SearchHit = namedtuple('search_hit', 'id type search_term')
 
@@ -83,18 +83,36 @@ class HeadlineParser():
 
     def extract_proper_nouns(self) -> None:
         """ Extacts names, places, etc. and stores them to the places variable """
-        self.interpret_abbreiviations()
-        proper_nouns: List[ProperNoun] = self.get_all_proper()
+        interpreted_headline = self.interpret_abbreiviations()
+        proper_nouns: List[ProperNoun] = self.get_all_proper(interpreted_headline)
         for candidate in proper_nouns:
             self.parse_candidate(candidate)
 
     def intepret_abbreviations(self):
-        """ Will use abbreivations table to understand abbreviations in headline and set that as new headline. Ex. 'Conn.' -> 'Connecticut' """
-        pass
-    def get_all_proper(self) -> List[ProperNoun]:
+        """ Will use abbreivations table to understand abbreviations in headline and set that as new headline. Ex. 'Conn.' -> 'Connecticut'
+        Doesn't add directly to proper Nouns since (a) possesing an abbreivation doesn't guarentee it should be tracked """
+        title_copy = self.title # in python strings are primitives; the value is copied
+        tokens = title_copy.split(" ")
+        candidate_abreviations = [token for token in tokens if token.endswith(".") and 2<=len(token)<=5]
+        abbrev_replacements: List[AbbrevReplacement] = []
+        for abbreviation in candidate_abreviations:
+            full_abbrev = self.query_abbreviation(abbreviation)
+            if full_abbrev:
+                abbrev_replacements.append(AbbrevReplacement(abbrev=abbreviation, full=full_abbrev))
+        for replacement in abbrev_replacements:
+            title_copy.replace(replacement.abbrev, replacement.full)
+        return title_copy
+
+    def query_abbreivation(self, abbreviation: str) -> str:
+        query = f"SELECT fullName from Abbreviations where abbreviation = '{abbreviation}'"
+        result = psql_util.query_single_field(query, self.connection)
+        if result:
+            return result
+
+    def get_all_proper(self, headline: str) -> List[ProperNoun]:
         """ Get list of all wanted (ie. of a useful type that we might want to track) proper nouns using spaCy"""
         nl_processor = spacy.load("en_core_web_sm")
-        analyzed_title = nl_processor(self.title)
+        analyzed_title = nl_processor(headline)
         tracked_labels = ["PERSON", "NORP", "FAC", "ORG", "GPE"] # only nouns indentified as of this type will be returned
         return [ProperNoun(ent.text_, ent.label_) for ent in analyzed_title.ents if ent.label_ in tracked_labels] # ent returns only entities (ie. proper nouns)
 

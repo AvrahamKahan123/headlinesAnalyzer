@@ -1,6 +1,5 @@
 import psycopg2
 from headlines.webscraper import *
-from headlines.webscraper import get_all_headlines
 
 
 """ PSQL Utility class"""
@@ -54,15 +53,6 @@ def link_headline_pnoun(headline_id: int, pNoun_id: int, connection=get_db_conne
     execute_insert(insert_stmt, connection)
 
 
-def add_headlines_SQLdb(headline_connection):
-    """ adds headline to PostgreSQL database """
-    cursor = headline_connection.cursor()
-    headlines = get_all_headlines()
-    insert_statements = [headline.create_insert() for headline in headlines]
-    for add_query in insert_statements:
-        cursor.execute(add_query)
-    headline_connection.commit()
-
 def get_highest_headline_ID(connection=get_db_connection()):
     query_highest = f"SELECT MAX(ID) from allheadlines"
     return query_single_field(query_highest, connection)
@@ -71,14 +61,4 @@ def get_highest_pNoun_id(connection=get_db_connection()):
     query_highest = f"SELECT MAX(ID) from ProperNouns"
     return query_single_field(query_highest, connection)
 
-def update_DB():
-    """ Updates Postgres with latest headlines"""
-    connection = get_db_connection()
-    with connection:
-        with connection.cursor() as cursor:
-            add_headlines_SQLdb(connection)
-    connection.close()
 
-
-if __name__ == '__main__':
-    update_DB()

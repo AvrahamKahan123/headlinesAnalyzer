@@ -70,7 +70,7 @@ def has_class_marker(headline, marker) -> bool:
 
 
 def get_all_headlines() -> List[str]:
-    """ Returns list of all headlines currently being scraped """
+    """ Returns list of all headlines currently being scraped. Is here instead of main because it depends on implementation details of webscraper """
     all_headlines = [ArticleHeadline(headline, 'FOX') for headline in get_FOX_headlines()]
     all_headlines.extend([ArticleHeadline(headline, 'MSNBC') for headline in get_MSNBC_headlines()])
     all_headlines.extend([ArticleHeadline(headline, 'ABC') for headline in get_ABC_headlines()])
