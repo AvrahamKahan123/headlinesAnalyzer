@@ -48,6 +48,12 @@ def query_full_row(query: str, connection=get_db_connection()):
     return cursor.fetchone()
 
 
+def query_batch(query: str, connection = get_db_connection()):
+    cursor = connection.cursor()
+    cursor.execute(query)
+    return cursor.fetchall()
+
+
 def link_headline_pnoun(headline_id: int, pNoun_id: int, connection=get_db_connection()):
     insert_stmt = f"INSERT INTO headlinePnouns(headlineId, pNounId) Values ({headline_id}, {pNoun_id})"
     execute_insert(insert_stmt, connection)

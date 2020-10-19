@@ -35,8 +35,9 @@ class TitleNormalizer(BaseEstimator, TransformerMixin):
 
 
 class FindTopics:
-    """ Uses Latent Dirichlet Allocation to extract topics from a list of headlines"""
-    def __init__(self, max_topics=10):
+    """ Uses Latent Dirichlet Allocation to extract topics from a list of headlines
+    Missing Input interface; will be added soon"""
+    def __init__(self, documents: List[str], max_topics=10, ):
         """ N_topics is max number of expected topics"""
         self.max_topics = max_topics
         self.lda_model = Pipeline([('norm', TitleNormalizer()),
@@ -44,6 +45,7 @@ class FindTopics:
                                    ('vect', CountVectorizer(lowercase=False, token_pattern='[a-zA-Z0-9]{2,}')),
                                    ('model', LatentDirichletAllocation(n_topics=self.max_topics)),
                                    ])
+        self.documents = documents
 
     def fit_transform(self, documents):
         """ Calls fit_transform for every stage in the pipeline"""
