@@ -11,10 +11,10 @@ The program adds values and names to the database by scraping the web (this feat
 The program also indexes title names so to make them searchable. Signifigant modification to the schema has been done recently, so some of the code may as of now be illogical
 
 # current state
-Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API, extract places, people and organizations from the Headlines) is complete, yet they are not yet linked together to complete the pipeline. Extracting Proper nouns from the headlines still lacks some functionality (parsing abbreivations speicifically). Basic unit tests have verified some components. Currently the main focus is on adding unit/integration tests to assure proper functionality
+Most of the code to complete every individual task (parse the headlines, extract the topics with LDA, index the Topics, search the headlines against the topics, get the tweets with the Twitter API, extract places, people and organizations from the Headlines) is complete, yet they are not yet linked together to complete the pipeline. Extracting Proper nouns from the headlines still lacks some functionality (parsing abbreivations speicifically). Basic unit tests have verified some components. Currently the main focus is on adding unit/integration tests to assure proper functionality and adding more data to the database
 
 # current Issues 
-Needs to have some mechanism of assigning serial ids. Will be thread-safe. Currently no mechanism in place after last one was thrown away
+Finding sources of data for proper nouns is a big problem
 multithreading will be added, especially for DB queries when searching for proper nouns
 spaCy was having some issues, but after being reinstalled, has been working fine
 
