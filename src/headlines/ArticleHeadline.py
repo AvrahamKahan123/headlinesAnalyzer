@@ -8,11 +8,6 @@ from headlines import webscraper
 from headlines import psql_util
 
 
-class loadSpacy:
-    def __init__(self):
-        spacy.load('en_core_web_sm')
-
-
 class ArticleHeadline:
     """ Represents headline scraped from the web. Contains id of Article in postgres, as well as extracted peoples, places, and organizations"""
     def __init__(self, title: str, source: str, id = -1,
@@ -98,10 +93,12 @@ class HeadlineParser():
         for candidate in proper_nouns:
             self.parse_candidate(candidate)
 
-    def intepret_abbreviations(self):
-        """ Will use abbreivations table to understand abbreviations in headline and set that as new headline. Ex. 'Conn.' -> 'Connecticut'
-        Doesn't add directly to proper Nouns since (a) possesing an abbreivation doesn't guarentee it should be tracked """
-        title_copy = self.title # in python strings are primitives; the value is copied
+    def intepret_abbreviations(self) -> str:
+        """
+        :returns string with abbreviations replaced with their full names
+        Will use abbreivations table to understand abbreviations in headline and set that as new headline. Ex. 'Conn.' -> 'Connecticut'
+        Doesn't add directly to proper Nouns since abbreviation may be part of larger proper noun """
+        title_copy = self.title # in python, strings are primitives; the value is copied
         tokens = title_copy.split(" ")
         candidate_abreviations = [token for token in tokens if token.endswith(".") and 2<=len(token)<=5]
         abbrev_replacements: List[AbbrevReplacement] = []
@@ -127,8 +124,11 @@ class HeadlineParser():
         return [ProperNoun(ent.text_, ent.label_) for ent in analyzed_title.ents if ent.label_ in tracked_labels] # ent returns only entities (ie. proper nouns)
 
     def parse_candidate(self, candidate: ProperNoun) -> None:
-        """ Parses a single word and if it finds a hit, notes it in the db, etc
+        """
+        prime candidate to become threaded, since very little processing and long wait time on IO from the database
+        Parses a single word and if it finds a hit, notes it in the db, etc
         Code must be added to remove punctuation and if need be, lemmatize the word"""
+        #each search has its own function
         search_functions: List[Callable[[str], SearchHit]] = [self.search_NORP, self.search_acronym,
                                                               self.search_nicknames, self.search_pnouns, self.scrape_name()]
         for i in range(len(search_functions)):
@@ -143,21 +143,21 @@ class HeadlineParser():
     def search_norp(self, candidate: ProperNoun) -> SearchHit:
         if candidate.type != "NORP": # NORPs are easy to find, so we can rely on spaCy getting it right with them, unlike other labels
             return None
-        query = f"SELECT id, type FROM Norps WHERE fromName = '{candidate.noun}'"
-        search = psql_util.query_full_row(query, self.connection)
+        query = f"SELECT id FROM Norps WHERE shortName = '{candidate.noun}'"
+        search_id = psql_util.query_single_field(query, self.connection)
         if id:
-            return SearchHit(search[0], search[1], candidate.noun)
+            return SearchHit(search_id, "PLACE", candidate.noun)
         # else will return None
 
     def search_acronym(self, candidate: ProperNoun) -> SearchHit:
         if candidate.noun.count(" ") < 2 and re.match(f"[A-Z0-9]{2, {self.max_acronym_length}}", candidate.noun): # if is candidate to be acronym
-            query = f"SELECT id, type FROM Acronyms WHERE acronym = '{candidate.noun}'"
+            query = f"SELECT Acronym.id, ProperNoun.type FROM Acronyms INNER JOIN ON ProperNouns WHERE Acronyms.id = ProperNouns.id AND acronym = '{candidate.noun}'"
             search = psql_util.query_full_row(query, self.connection)
             if search:
                 return SearchHit(search[0], search[1], candidate.noun)
 
     def search_nicknames(self, candidate: ProperNoun) -> SearchHit:
-        query = f"SELECT id, type FROM nicknames WHERE nickname = '{candidate.noun}'"
+        query = f"SELECT Nicknames.id, ProperNouns.type FROM Nicknames INNER JOIN ON ProperNouns where Nicknames.id = ProperNouns.id  AND nickname = '{candidate.noun}'" # needs to be replaced by join
         search = psql_util.query_full_row(query, self.connection)
         if search:
             return SearchHit(search[0], search[1], candidate.noun)
@@ -175,7 +175,7 @@ class HeadlineParser():
     def resolve_name(self, candidate: ProperNoun):
         """ Resolves unidentified name using webscraping"""
         name = self.scrape_name(candidate.noun)
-        if name:
+        if name: # needs explicit check to make sure double inserts of names don't happen, though this is unlikely in the extreme as per the current program flow
             newname_id = self.commit_name()
             return SearchHit(newname_id, "PERSON", name)
         else:
@@ -191,7 +191,10 @@ class HeadlineParser():
             return None
 
     def commit_name(self, name) -> int:
-        """ Commits new name to DB and gets its ID"""
+        """
+        This will be moved to new class soon since it violates SRP
+        Commits new name to DB and gets its ID
+        """
         insert_stmt = f"INSERT INTO ProperNouns(fullName, type) Values('{name}', 'PERSON') ON Conflict DO Nothing"
         psql_util.execute_insert(insert_stmt)
         query = f"SELECT ID FROM ProperNouns where fullName = '{name}'"
