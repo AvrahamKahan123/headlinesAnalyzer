@@ -2,19 +2,19 @@ import psycopg2
 from headlines.webscraper import *
 
 
-""" PSQL Utility class"""
+""" PSQL client wrapper class using psycopg2 module"""
 
 
 def get_db_connection():
     """ :return a connection to PostgresSQL headlines database"""
     try:
         # can reveal password since is only on local network
-        headlineConnection = psycopg2.connect(user = "adminheadlines",
+        db_connection = psycopg2.connect(user = "adminheadlines",
                                       password = "abc123",
                                       host = "127.0.0.1",
                                       port = "5432",
                                       database = "headlines")
-        return headlineConnection
+        return db_connection
 
     except (Exception, psycopg2.Error) as connection_error :
         print ("Error when attempting to connect to Headlines database", connection_error)
@@ -62,6 +62,7 @@ def link_headline_pnoun(headline_id: int, pNoun_id: int, connection=get_db_conne
 def get_highest_headline_ID(connection=get_db_connection()):
     query_highest = f"SELECT MAX(ID) from allheadlines"
     return query_single_field(query_highest, connection)
+
 
 def get_highest_pNoun_id(connection=get_db_connection()):
     query_highest = f"SELECT MAX(ID) from ProperNouns"

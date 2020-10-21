@@ -16,9 +16,9 @@ if __name__ == '__main__':
     connection = get_db_connection()
     cursor = connection.cursor()
     congress_people = get_congresspeople()
-    current_id= get_highest_pNoun_id() + 1
+    current_id= get_highest_pNoun_id() + 1  # used for assigning serial ids. not really ideal, but is part of setup so is acceptable
     for congress_person in congress_people:
-        cursor.execute(f"INSERT into properNounds(id, fullName, type) values({current_id}, '{congress_person[0] + congress_person[1]}', 'PERSON') ;")
+        cursor.execute(f"INSERT into properNouns(id, fullName, type) values({current_id}, '{congress_person[0] + congress_person[1]}', 'PERSON') ;")
         current_id+=1
     connection.commit()
     connection.close()

@@ -118,7 +118,7 @@ class HeadlineParser():
 
     def get_all_proper(self, headline: str) -> List[ProperNoun]:
         """ Get list of all wanted (ie. of a useful type that we might want to track) proper nouns using spaCy"""
-        nl_processor = spacy.load("en_core_web_sm")
+        nl_processor = spacy.load("en_core_web_sm")  # ISSUE: CANNOT RESOLVE LINK
         analyzed_title = nl_processor(headline)
         tracked_labels = ["PERSON", "NORP", "FAC", "ORG", "GPE"] # only nouns indentified as of this type will be returned
         return [ProperNoun(ent.text_, ent.label_) for ent in analyzed_title.ents if ent.label_ in tracked_labels] # ent returns only entities (ie. proper nouns)

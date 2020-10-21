@@ -7,7 +7,7 @@ class ArticleAssigner:
     """ Discovers Topic to which ArticleHeadline objects belong to using ElasticSearch"""
     def __init__(self, headlines: List[ArticleHeadline], threshold: float):
         self.headlines = headlines
-        self.threshold = threshold # threshold for ElasticSearch hit for a topic must be to be considered signifigant
+        self.threshold = threshold  # threshold for ElasticSearch hit for a topic must be to be considered significant
         self.es_instance = get_es_client()
 
     def assign_articles(self):

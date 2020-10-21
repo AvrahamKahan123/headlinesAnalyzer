@@ -41,6 +41,7 @@ def one_day_ago() -> datetime:
     delta = datetime.timedelta(days=1)
     return today - delta
 
+
 if __name__ == '__main__':
     if len(sys.argv == 1):
         raise InvalidArgumentException("Invalid arguments supplied to main.py")
